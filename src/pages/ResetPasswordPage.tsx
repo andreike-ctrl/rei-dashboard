@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 
@@ -7,24 +7,7 @@ export function ResetPasswordPage() {
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [ready, setReady] = useState(false);
   const navigate = useNavigate();
-
-  // Supabase fires PASSWORD_RECOVERY when the token is processed.
-  // AuthProvider may consume it before this component mounts, so also
-  // check for an existing session on mount as a fallback.
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) setReady(true);
-    });
-
-    const { data: listener } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") {
-        setReady(true);
-      }
-    });
-    return () => listener.subscription.unsubscribe();
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,10 +49,7 @@ export function ResetPasswordPage() {
             </div>
           </div>
 
-          {!ready ? (
-            <p className="text-sm text-muted-foreground">Verifying reset link…</p>
-          ) : (
-            <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
+          <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-foreground" htmlFor="password">
                   New password
@@ -110,7 +90,6 @@ export function ResetPasswordPage() {
                 {loading ? "Updating…" : "Update Password"}
               </button>
             </form>
-          )}
         </div>
       </div>
     </div>

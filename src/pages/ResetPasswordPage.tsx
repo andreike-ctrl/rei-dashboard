@@ -10,9 +10,14 @@ export function ResetPasswordPage() {
   const [ready, setReady] = useState(false);
   const navigate = useNavigate();
 
-  // Supabase processes the recovery token from the URL hash and fires
-  // a PASSWORD_RECOVERY event — wait for that before showing the form
+  // Supabase fires PASSWORD_RECOVERY when the token is processed.
+  // AuthProvider may consume it before this component mounts, so also
+  // check for an existing session on mount as a fallback.
   useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) setReady(true);
+    });
+
     const { data: listener } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
         setReady(true);

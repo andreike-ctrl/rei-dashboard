@@ -21,6 +21,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const isInvite = window.location.hash.includes("type=invite");
+
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setLoading(false);
@@ -29,6 +31,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       if (event === "PASSWORD_RECOVERY") {
+        navigate("/reset-password");
+      }
+      if (event === "SIGNED_IN" && isInvite) {
         navigate("/reset-password");
       }
     });

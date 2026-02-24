@@ -5,7 +5,6 @@ import {
   View,
   Image,
   StyleSheet,
-  Font,
   Svg,
   Path,
   Circle,
@@ -26,20 +25,6 @@ function fmtCurrency(v: number | null | undefined) {
   return v.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 }
 
-function fmtPercent(v: number | null | undefined) {
-  if (v == null) return "—";
-  return (v * 100).toFixed(2) + "%";
-}
-
-function fmtPercentRaw(v: number | null | undefined) {
-  if (v == null) return "—";
-  return v.toFixed(1) + "%";
-}
-
-function fmtMultiple(v: number | null | undefined) {
-  if (v == null) return "—";
-  return v.toFixed(2) + "x";
-}
 
 function fmtDate(d: string | null | undefined) {
   if (!d) return "—";
@@ -59,19 +44,6 @@ function fmtHalf(d: string | null | undefined) {
   return `${half} ${dt.getFullYear()}`;
 }
 
-const METRIC_LABELS: Record<string, { label: string; fmt: (v: number) => string }> = {
-  OCCUPANCY:     { label: "Occupancy",       fmt: (v) => fmtPercentRaw(v) },
-  PRELEASE:      { label: "Pre-Lease",        fmt: (v) => fmtPercentRaw(v) },
-  AVGRENT:       { label: "Avg Rent",         fmt: (v) => fmtCurrency(v) },
-  TOTALREV:      { label: "Total Revenue",    fmt: (v) => fmtCurrency(v) },
-  TOTALOPEX:     { label: "Total OpEx",       fmt: (v) => fmtCurrency(v) },
-  NOI:           { label: "NOI",              fmt: (v) => fmtCurrency(v) },
-  NETCF:         { label: "Net Cash Flow",    fmt: (v) => fmtCurrency(v) },
-  DEBTSERVICE:   { label: "Debt Service",     fmt: (v) => fmtCurrency(v) },
-  BUDGETEDREV:   { label: "Budgeted Revenue", fmt: (v) => fmtCurrency(v) },
-  BUDGETEDOPEX:  { label: "Budgeted OpEx",    fmt: (v) => fmtCurrency(v) },
-  BUDGETEDNOI:   { label: "Budgeted NOI",     fmt: (v) => fmtCurrency(v) },
-};
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
@@ -297,14 +269,6 @@ function smoothPath(pts: { x: number; y: number }[]): string {
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
-function StatBox({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
-  return (
-    <View style={s.statBox}>
-      <Text style={s.statLabel}>{label}</Text>
-      <Text style={accent ? s.statValueAccent : s.statValue}>{value}</Text>
-    </View>
-  );
-}
 
 function SectionTitle({ children }: { children: string }) {
   return <Text style={s.sectionTitle}>{children}</Text>;
@@ -432,10 +396,10 @@ function LineChart({
         {pts.map((p, i) => (
           <G key={i}>
             <Circle cx={p.x} cy={p.y} r={3} fill={color} />
-            <SvgText x={p.x} y={p.y - 8} fontSize={7} fill={C.gray800} textAnchor="middle">
+            <SvgText x={p.x} y={p.y - 8} style={{ fontSize: 7 }} fill={C.gray800} textAnchor="middle">
               {formatValue(p.value)}
             </SvgText>
-            <SvgText x={p.x} y={padT + chartH + 13} fontSize={7} fill={C.gray400} textAnchor="middle">
+            <SvgText x={p.x} y={padT + chartH + 13} style={{ fontSize: 7 }} fill={C.gray400} textAnchor="middle">
               {p.label}
             </SvgText>
           </G>
@@ -461,25 +425,9 @@ interface Props {
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string;
 
-export function PropertyReportPDF({ property, valuations, transactions, metrics, investors, clients, period, commentary, photos }: Props) {
+export function PropertyReportPDF({ property, valuations: _valuations, transactions: _transactions, metrics, investors: _investors, clients: _clients, period, commentary, photos }: Props) {
   const logoSrc = `${window.location.origin}/vo2-logo.png`;
   const generatedDate = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
-
-  // ── Derived financials ──
-  const distributions = transactions.filter((t) => t.type === "Distribution");
-  const distributionsPaid = distributions.reduce((s, t) => s + t.cash_amount, 0);
-
-  // ── Latest metric per type ──
-  const latestMetrics: Record<string, Metric> = {};
-  for (const m of metrics) {
-    const existing = latestMetrics[m.metric_type];
-    if (!existing || m.as_of_date > existing.as_of_date) {
-      latestMetrics[m.metric_type] = m;
-    }
-  }
-  const metricRows = Object.entries(METRIC_LABELS)
-    .map(([type, def]) => ({ ...def, type, metric: latestMetrics[type] ?? null }))
-    .filter((r) => r.metric !== null);
 
   // ── Chart data ──
   const occupancyData = metrics
@@ -492,19 +440,6 @@ export function PropertyReportPDF({ property, valuations, transactions, metrics,
     .sort((a, b) => a.as_of_date.localeCompare(b.as_of_date))
     .map((m) => ({ label: fmtHalf(m.as_of_date), value: m.metric_value }));
 
-  // ── Investor lookup ──
-  const investorMap = new Map(investors.map((i) => [i.investor_id, i]));
-  const clientMap = new Map(clients.map((c) => [c.client_id, c]));
-
-  // ── Distribution rows ──
-  const distRows = distributions
-    .slice()
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .map((t) => {
-      const inv = investorMap.get(t.investor_id);
-      const cli = inv ? clientMap.get(inv.client_id) : null;
-      return { date: t.date, name: cli?.name ?? inv?.name ?? "—", amount: t.cash_amount };
-    });
 
   // ── Map height matched to occupancy chart ──
   // Both columns share a SectionTitle so only the bars area height needs to match.

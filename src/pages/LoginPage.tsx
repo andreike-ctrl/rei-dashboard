@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 
 export function LoginPage() {
@@ -6,6 +7,7 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -16,6 +18,8 @@ export function LoginPage() {
 
     if (error) {
       setError("Invalid email or password.");
+    } else {
+      navigate("/");
     }
 
     setLoading(false);

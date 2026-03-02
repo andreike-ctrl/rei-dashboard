@@ -15,7 +15,7 @@ import {
   Text as SvgText,
   G,
 } from "@react-pdf/renderer";
-import type { Property, Valuation, Transaction, Metric, Investor, Client } from "@/types/database";
+import type { Property, Valuation, Transaction, Metric, Investor, Client, PropertyLocation } from "@/types/database";
 import type { PhotoItem } from "@/pages/Report";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -418,6 +418,7 @@ interface Props {
   metrics: Metric[];
   investors: Investor[];
   clients: Client[];
+  locations: PropertyLocation[];
   period?: string;
   commentary?: string;
   photos?: PhotoItem[];
@@ -425,7 +426,7 @@ interface Props {
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string;
 
-export function PropertyReportPDF({ property, valuations: _valuations, transactions: _transactions, metrics, investors: _investors, clients: _clients, period, commentary, photos }: Props) {
+export function PropertyReportPDF({ property, valuations: _valuations, transactions: _transactions, metrics, investors: _investors, clients: _clients, locations, period, commentary, photos }: Props) {
   const logoSrc = `${window.location.origin}/vo2-logo.png`;
   const generatedDate = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 
@@ -516,12 +517,12 @@ export function PropertyReportPDF({ property, valuations: _valuations, transacti
 
           {/* ── Location + Occupancy (side by side) ── */}
           <View style={[s.section, s.twoCol]}>
-            {property.lat != null && property.lon != null ? (
+            {locations.length > 0 ? (
               <View style={s.colLeft}>
                 <SectionTitle>Location</SectionTitle>
                 <View style={{ width: "100%", height: mapH, borderRadius: 6, overflow: "hidden" }}>
                   <Image
-                    src={`https://api.mapbox.com/styles/v1/mapbox/light-v11/static/pin-s+1e40af(${property.lon},${property.lat})/${property.lon},${property.lat},4,0/500x280@2x?access_token=${MAPBOX_TOKEN}`}
+                    src={`https://api.mapbox.com/styles/v1/mapbox/light-v11/static/${locations.map((l) => `pin-s+1e40af(${l.lon},${l.lat})`).join(",")}/auto/500x280@2x?padding=40&access_token=${MAPBOX_TOKEN}`}
                     style={{ width: "100%", height: mapImgH, objectFit: "cover" }}
                   />
                 </View>

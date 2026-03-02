@@ -4,7 +4,7 @@ import { Download, ImagePlus, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { PropertyReportPDF } from "@/components/PropertyReportPDF";
 import { Spinner } from "@/components/ui/Spinner";
-import type { Property, Valuation, Transaction, Metric, Investor, Client } from "@/types/database";
+import type { Property, Valuation, Transaction, Metric, Investor, Client, PropertyLocation } from "@/types/database";
 
 export interface PhotoItem {
   dataUrl: string;
@@ -68,6 +68,7 @@ export function Report() {
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [investors, setInvestors] = useState<Investor[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
+  const [locations, setLocations] = useState<PropertyLocation[]>([]);
   const [dataLoading, setDataLoading] = useState(false);
 
   // ── Load properties on mount ──
@@ -90,11 +91,12 @@ export function Report() {
     async function load() {
       const id = selectedPropertyId!;
 
-      const [propRes, valRes, txnRes, metricRes] = await Promise.all([
+      const [propRes, valRes, txnRes, metricRes, locRes] = await Promise.all([
         supabase.from("properties").select("*").eq("property_id", id).single(),
         supabase.from("valuations").select("*").eq("property_id", id).order("date", { ascending: true }),
         supabase.from("transactions").select("*").eq("property_id", id).order("date", { ascending: true }),
         supabase.from("metrics").select("*").eq("property_id", id).order("as_of_date", { ascending: true }),
+        supabase.from("property_locations").select("*").eq("property_id", id),
       ]);
 
       const typedTxns = (txnRes.data ?? []) as Transaction[];
@@ -120,6 +122,7 @@ export function Report() {
       setMetrics((metricRes.data ?? []) as Metric[]);
       setInvestors(typedInvestors);
       setClients(typedClients);
+      setLocations((locRes.data ?? []) as PropertyLocation[]);
       setDataLoading(false);
     }
 
@@ -136,6 +139,7 @@ export function Report() {
       metrics={metrics}
       investors={investors}
       clients={clients}
+      locations={locations}
       period={period}
       commentary={commentary}
       photos={photos}

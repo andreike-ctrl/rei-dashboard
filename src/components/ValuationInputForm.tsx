@@ -175,7 +175,6 @@ export function ValuationInputForm({ properties, investors, transactions }: Valu
       date: asOfDate,
       units_outstanding: newUnits,
       nav: newNav,
-      nav_per_unit: newNav / newUnits,
     });
 
     if (error) {

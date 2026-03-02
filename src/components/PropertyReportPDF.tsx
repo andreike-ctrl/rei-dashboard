@@ -425,6 +425,21 @@ interface Props {
 }
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string;
+const DEFAULT_ZOOM = 4;
+
+// At zoom 4 a 500px-wide image shows ~20° of longitude comfortably.
+// Use auto only when pins are spread beyond that so they'd fall off the edge.
+function staticMapUrl(locs: { lat: number; lon: number }[]): string {
+  const pins = locs.map((l) => `pin-s+1e40af(${l.lon},${l.lat})`).join(",");
+  const lats = locs.map((l) => l.lat);
+  const lons = locs.map((l) => l.lon);
+  const centerLat = (Math.min(...lats) + Math.max(...lats)) / 2;
+  const centerLon = (Math.min(...lons) + Math.max(...lons)) / 2;
+  const span = Math.max(Math.max(...lats) - Math.min(...lats), Math.max(...lons) - Math.min(...lons));
+  const position = span > 20 ? "auto" : `${centerLon},${centerLat},${DEFAULT_ZOOM},0`;
+  const extra = span > 20 ? "&padding=40" : "";
+  return `https://api.mapbox.com/styles/v1/mapbox/light-v11/static/${pins}/${position}/500x280@2x?access_token=${MAPBOX_TOKEN}${extra}`;
+}
 
 export function PropertyReportPDF({ property, valuations: _valuations, transactions: _transactions, metrics, investors: _investors, clients: _clients, locations, period, commentary, photos }: Props) {
   const logoSrc = `${window.location.origin}/vo2-logo.png`;
@@ -522,7 +537,7 @@ export function PropertyReportPDF({ property, valuations: _valuations, transacti
                 <SectionTitle>Location</SectionTitle>
                 <View style={{ width: "100%", height: mapH, borderRadius: 6, overflow: "hidden" }}>
                   <Image
-                    src={`https://api.mapbox.com/styles/v1/mapbox/light-v11/static/${locations.map((l) => `pin-s+1e40af(${l.lon},${l.lat})`).join(",")}/auto/500x280@2x?padding=40&access_token=${MAPBOX_TOKEN}`}
+                    src={staticMapUrl(locations)}
                     style={{ width: "100%", height: mapImgH, objectFit: "cover" }}
                   />
                 </View>

@@ -8,6 +8,7 @@ import {
 } from "@/components/DividendReviewTable";
 import { TransactionInputForm } from "@/components/TransactionInputForm";
 import { MetricInputForm } from "@/components/MetricInputForm";
+import { ValuationInputForm } from "@/components/ValuationInputForm";
 import { LocationInputForm } from "@/components/LocationInputForm";
 import { PropertyForm } from "@/components/PropertyForm";
 import { Card, CardContent } from "@/components/ui/Card";
@@ -374,6 +375,16 @@ export function DataInput() {
         investors={investors}
         clients={clients}
       />
+
+      {/* NAV Update */}
+      <div className="mt-10 mb-4">
+        <h2 className="text-lg font-semibold text-foreground">NAV Update</h2>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          Record a new total NAV and units outstanding for a property
+        </p>
+      </div>
+
+      <ValuationInputForm properties={properties} />
 
       {/* Property Metrics Input */}
       <div className="mt-10 mb-4">

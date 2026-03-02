@@ -1,6 +1,6 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search } from "lucide-react";
+import { Search, ChevronDown, Check } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { ClientSummary } from "@/components/ClientSummary";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -43,6 +43,8 @@ export function Clients() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [checkedClientIds, setCheckedClientIds] = useState<Set<number>>(new Set());
+  const [clientPickerOpen, setClientPickerOpen] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -85,6 +87,7 @@ export function Clients() {
       setInvestors(investorResult.data as Investor[]);
       setTransactions(txnResult.data as Transaction[]);
       setValuations(valResult.data as Valuation[]);
+      setCheckedClientIds(new Set((clientResult.data as Client[]).map((c) => c.client_id)));
       setLoading(false);
     }
 
@@ -179,8 +182,8 @@ export function Clients() {
     return rows;
   }, [clients, investorsByClient, txnsByInvestor, latestNavPerUnit]);
 
-  // Search filter
-  const filteredRows = useMemo(() => {
+  // Step 1: search filter
+  const searchFiltered = useMemo(() => {
     if (!search) return clientRows;
     const s = search.toLowerCase();
     return clientRows.filter(
@@ -189,6 +192,40 @@ export function Clients() {
         r.client.domicile.toLowerCase().includes(s)
     );
   }, [clientRows, search]);
+
+  // Step 2: checkbox filter
+  const filteredRows = useMemo(
+    () => searchFiltered.filter((r) => checkedClientIds.has(r.client.client_id)),
+    [searchFiltered, checkedClientIds]
+  );
+
+  const allVisibleChecked = searchFiltered.every((r) =>
+    checkedClientIds.has(r.client.client_id)
+  );
+  const checkedCount = searchFiltered.filter((r) =>
+    checkedClientIds.has(r.client.client_id)
+  ).length;
+
+  const toggleClient = useCallback((id: number) => {
+    setCheckedClientIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleAll = useCallback(() => {
+    setCheckedClientIds((prev) => {
+      const next = new Set(prev);
+      if (allVisibleChecked) {
+        for (const r of searchFiltered) next.delete(r.client.client_id);
+      } else {
+        for (const r of searchFiltered) next.add(r.client.client_id);
+      }
+      return next;
+    });
+  }, [searchFiltered, allVisibleChecked]);
 
   // Aggregates
   const totalAum = filteredRows.reduce((s, r) => s + r.currentNav, 0);
@@ -224,7 +261,7 @@ export function Clients() {
         </p>
       </div>
 
-      {/* Search */}
+      {/* Search + client picker */}
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -235,6 +272,70 @@ export function Clients() {
             onChange={(e) => setSearch(e.target.value)}
             className="h-9 w-full rounded-md border border-border bg-background pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
           />
+        </div>
+
+        {/* Client picker dropdown */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setClientPickerOpen((o) => !o)}
+            className="flex h-9 items-center gap-1.5 rounded-md border border-border bg-background px-3 text-sm text-foreground hover:bg-secondary/60 transition-colors"
+          >
+            Clients ({checkedCount}/{searchFiltered.length})
+            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+          </button>
+
+          {clientPickerOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setClientPickerOpen(false)}
+              />
+              <div className="absolute right-0 z-50 mt-1 w-64 rounded-md border border-border bg-background shadow-lg">
+                <button
+                  type="button"
+                  onClick={toggleAll}
+                  className="flex w-full items-center gap-2 border-b border-border px-3 py-2 text-left text-sm font-medium text-foreground hover:bg-secondary/60 transition-colors"
+                >
+                  <span
+                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
+                      allVisibleChecked
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border"
+                    }`}
+                  >
+                    {allVisibleChecked && <Check className="h-3 w-3" />}
+                  </span>
+                  {allVisibleChecked ? "Deselect all" : "Select all"}
+                </button>
+
+                <div className="max-h-64 overflow-y-auto py-1">
+                  {searchFiltered.map((r) => {
+                    const isChecked = checkedClientIds.has(r.client.client_id);
+                    return (
+                      <button
+                        key={r.client.client_id}
+                        type="button"
+                        onClick={() => toggleClient(r.client.client_id)}
+                        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-foreground hover:bg-secondary/60 transition-colors"
+                      >
+                        <span
+                          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
+                            isChecked
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-border"
+                          }`}
+                        >
+                          {isChecked && <Check className="h-3 w-3" />}
+                        </span>
+                        <span className="truncate">{r.client.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 

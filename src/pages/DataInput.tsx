@@ -384,7 +384,7 @@ export function DataInput() {
         </p>
       </div>
 
-      <ValuationInputForm properties={properties} />
+      <ValuationInputForm properties={properties} investors={investors} transactions={transactions} />
 
       {/* Property Metrics Input */}
       <div className="mt-10 mb-4">

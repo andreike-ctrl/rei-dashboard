@@ -34,10 +34,19 @@ export function FinancialOverview({
   const latestValuation = valuations.length > 0 ? valuations[valuations.length - 1] : null;
   const currentNav = latestValuation?.nav ?? null;
 
-  // Current multiple = (current NAV + distributions + other proceeds) / VO2 raise
+  // Actual capital called = sum of all funding-type outflows (already negative in DB)
+  // Use this as the denominator so that Purchase outflows are counted alongside their
+  // matching Sale inflows in the numerator — consistent with standard PE MOIC convention.
+  const actualCapitalCalled = -transactions
+    .filter((t) => FUNDING_TYPES.has(t.type))
+    .reduce((sum, t) => sum + t.cash_amount, 0);
+
+  const denominator = actualCapitalCalled > 0 ? actualCapitalCalled : property.vo2_raise;
+
+  // Current multiple = (current NAV + distributions + other proceeds) / actual capital called
   const currentMultiple =
-    currentNav != null && property.vo2_raise > 0
-      ? (currentNav + distributionsPaid + otherProceeds) / property.vo2_raise
+    currentNav != null && denominator > 0
+      ? (currentNav + distributionsPaid + otherProceeds) / denominator
       : null;
 
   // --- Actual IRR via XIRR ---
@@ -74,6 +83,7 @@ export function FinancialOverview({
     { label: "Total Equity", value: formatCurrency(property.total_equity) },
     { label: "Total Debt", value: formatCurrency(property.total_debt) },
     { label: "Purchase Price", value: formatCurrency(property.purchase_price) },
+    { label: "Capital Called", value: formatCurrency(actualCapitalCalled > 0 ? actualCapitalCalled : property.vo2_raise) },
     { label: "Current NAV", value: formatCurrency(currentNav) },
     { label: "Distributions Paid", value: formatCurrency(distributionsPaid) },
     { label: "Other Proceeds", value: formatCurrency(otherProceeds) },

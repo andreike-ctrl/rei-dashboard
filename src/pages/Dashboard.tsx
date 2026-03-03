@@ -1,10 +1,11 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { Search, ChevronDown, Check } from "lucide-react";
+import { Search, ChevronDown, Check, Download } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { PropertyCard } from "@/components/PropertyCard";
 import { PortfolioSummary } from "@/components/PortfolioSummary";
 import { Spinner } from "@/components/ui/Spinner";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
+import { downloadCsv } from "@/lib/csv";
 import type { Property, PropertyWithNav, Valuation, Transaction } from "@/types/database";
 
 /** Transaction types that represent funding / capital raised */
@@ -219,6 +220,29 @@ export function Dashboard() {
     checkedIds.has(p.property_id)
   ).length;
 
+  function handleExport() {
+    downloadCsv(
+      "properties.csv",
+      ["Name", "Entity", "GP", "Asset Class", "Strategy", "State", "MSA", "Investment Date", "Exit Date", "VO2 Raise", "Total Equity", "Total Debt", "Purchase Price", "Latest NAV"],
+      filtered.map((p) => [
+        p.name,
+        p.entity,
+        p.gp,
+        p.asset_class,
+        p.strategy,
+        p.state,
+        p.msa,
+        p.investment_date,
+        p.exit_date ?? "",
+        p.vo2_raise,
+        p.total_equity,
+        p.total_debt,
+        p.purchase_price,
+        p.latest_nav ?? "",
+      ])
+    );
+  }
+
   if (loading) return <Spinner />;
   if (error) return <ErrorMessage message={error} />;
 
@@ -266,6 +290,17 @@ export function Dashboard() {
             </option>
           ))}
         </select>
+
+        {/* Export */}
+        <button
+          type="button"
+          onClick={handleExport}
+          className="flex h-9 items-center gap-1.5 rounded-md border border-border bg-background px-3 text-sm text-foreground hover:bg-secondary/60 transition-colors"
+          title="Export visible properties to CSV"
+        >
+          <Download className="h-3.5 w-3.5" />
+          Export
+        </button>
 
         {/* Property picker dropdown */}
         <div className="relative">

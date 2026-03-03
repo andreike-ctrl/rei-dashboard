@@ -1,12 +1,13 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, ChevronDown, Check } from "lucide-react";
+import { Search, ChevronDown, Check, Download } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { ClientSummary } from "@/components/ClientSummary";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Spinner } from "@/components/ui/Spinner";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { formatCurrency, formatMultiple } from "@/lib/format";
+import { downloadCsv } from "@/lib/csv";
 import type {
   Client,
   Investor,
@@ -248,6 +249,23 @@ export function Clients() {
     .map((r) => ({ name: r.client.name, aum: r.currentNav }))
     .sort((a, b) => b.aum - a.aum);
 
+  function handleExport() {
+    downloadCsv(
+      "clients.csv",
+      ["Client", "Domicile", "Accounts", "Capital Invested", "Current NAV", "Distributions", "Other Proceeds", "MOIC"],
+      filteredRows.map((r) => [
+        r.client.name,
+        r.client.domicile,
+        r.accountCount,
+        r.capitalInvested,
+        r.currentNav,
+        r.dividends,
+        r.otherProceeds,
+        r.moic ?? "",
+      ])
+    );
+  }
+
   if (loading) return <Spinner />;
   if (error) return <ErrorMessage message={error} />;
 
@@ -273,6 +291,17 @@ export function Clients() {
             className="h-9 w-full rounded-md border border-border bg-background pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
           />
         </div>
+
+        {/* Export */}
+        <button
+          type="button"
+          onClick={handleExport}
+          className="flex h-9 items-center gap-1.5 rounded-md border border-border bg-background px-3 text-sm text-foreground hover:bg-secondary/60 transition-colors"
+          title="Export visible clients to CSV"
+        >
+          <Download className="h-3.5 w-3.5" />
+          Export
+        </button>
 
         {/* Client picker dropdown */}
         <div className="relative">

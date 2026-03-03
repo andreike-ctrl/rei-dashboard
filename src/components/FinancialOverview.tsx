@@ -4,6 +4,7 @@ import {
   formatPercent,
   formatMultiple,
 } from "@/lib/format";
+import { xirr } from "@/lib/xirr";
 import type { Property, Transaction, Valuation } from "@/types/database";
 
 interface FinancialOverviewProps {
@@ -29,9 +30,9 @@ export function FinancialOverview({
     .filter((t) => !FUNDING_TYPES.has(t.type) && t.type !== "Distribution")
     .reduce((sum, t) => sum + t.cash_amount, 0);
 
-  // Current NAV = latest valuation
-  const currentNav =
-    valuations.length > 0 ? valuations[valuations.length - 1].nav : null;
+  // Current NAV = latest valuation (valuations are ordered ascending by date)
+  const latestValuation = valuations.length > 0 ? valuations[valuations.length - 1] : null;
+  const currentNav = latestValuation?.nav ?? null;
 
   // Current multiple = (current NAV + distributions + other proceeds) / VO2 raise
   const currentMultiple =
@@ -39,7 +40,36 @@ export function FinancialOverview({
       ? (currentNav + distributionsPaid + otherProceeds) / property.vo2_raise
       : null;
 
-  const items: { label: string; value: string }[] = [
+  // --- Actual IRR via XIRR ---
+  // Cash flows from VO2 LP perspective:
+  //   Funding types: already negative in DB (money out) → pass through as-is
+  //   Distributions / other proceeds: positive (money in) → pass through as-is
+  //   Terminal value: latest NAV as a positive inflow at the latest valuation date
+  const actualIrr = (() => {
+    if (transactions.length === 0 || currentNav == null || latestValuation == null) return null;
+
+    const flows = transactions
+      .filter((t) => t.cash_amount !== 0)
+      .map((t) => ({
+        amount: t.cash_amount,
+        date: new Date(t.date + "T00:00:00"),
+      }));
+
+    if (flows.length === 0) return null;
+
+    // Add terminal NAV as a positive inflow at the latest valuation date
+    flows.push({
+      amount: currentNav,
+      date: new Date(latestValuation.date + "T00:00:00"),
+    });
+
+    // Sort chronologically (required by xirr)
+    flows.sort((a, b) => a.date.getTime() - b.date.getTime());
+
+    return xirr(flows);
+  })();
+
+  const items: { label: string; value: string; highlight?: boolean }[] = [
     { label: "VO2 Raise", value: formatCurrency(property.vo2_raise) },
     { label: "Total Equity", value: formatCurrency(property.total_equity) },
     { label: "Total Debt", value: formatCurrency(property.total_debt) },
@@ -47,7 +77,8 @@ export function FinancialOverview({
     { label: "Current NAV", value: formatCurrency(currentNav) },
     { label: "Distributions Paid", value: formatCurrency(distributionsPaid) },
     { label: "Other Proceeds", value: formatCurrency(otherProceeds) },
-    { label: "Current Multiple", value: formatMultiple(currentMultiple) },
+    { label: "Current Multiple", value: formatMultiple(currentMultiple), highlight: true },
+    { label: "Actual IRR", value: actualIrr != null ? formatPercent(actualIrr) : "—", highlight: true },
     { label: "Projected LP IRR", value: formatPercent(property.projected_lp_irr) },
     { label: "Projected IRR", value: formatPercent(property.projected_irr) },
     { label: "Projected Multiple", value: formatMultiple(property.projected_multiple) },
@@ -66,7 +97,7 @@ export function FinancialOverview({
               <p className="text-xs font-medium uppercase text-muted-foreground">
                 {item.label}
               </p>
-              <p className="mt-1 text-lg font-semibold text-foreground">
+              <p className={`mt-1 text-lg font-semibold ${item.highlight ? "text-primary" : "text-foreground"}`}>
                 {item.value}
               </p>
             </div>

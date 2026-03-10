@@ -69,8 +69,12 @@ export function PropertyHeader({ property }: PropertyHeaderProps) {
         {property.units && (
           <DetailItem
             icon={<Building className="h-4 w-4" />}
-            label="Units"
-            value={formatNumber(property.units)}
+            label={property.beds ? "Units / Beds" : "Units"}
+            value={
+              property.beds
+                ? `${formatNumber(property.units)} / ${property.beds}`
+                : formatNumber(property.units)
+            }
           />
         )}
         {property.buildings && (

@@ -78,11 +78,27 @@ export function FinancialOverview({
     return xirr(flows);
   })();
 
+  const pricePerUnit =
+    property.purchase_price && property.units
+      ? property.purchase_price / property.units
+      : null;
+  const pricePerBed =
+    property.purchase_price && property.beds
+      ? property.purchase_price / Number(property.beds)
+      : null;
+  const pricePerBuilding =
+    property.purchase_price && property.buildings
+      ? property.purchase_price / property.buildings
+      : null;
+
   const items: { label: string; value: string; highlight?: boolean }[] = [
     { label: "VO2 Raise", value: formatCurrency(property.vo2_raise) },
     { label: "Total Equity", value: formatCurrency(property.total_equity) },
     { label: "Total Debt", value: formatCurrency(property.total_debt) },
     { label: "Purchase Price", value: formatCurrency(property.purchase_price) },
+    ...(pricePerBuilding != null ? [{ label: "Price / Building", value: formatCurrency(pricePerBuilding) }] : []),
+    ...(pricePerUnit != null ? [{ label: "Price / Unit", value: formatCurrency(pricePerUnit) }] : []),
+    ...(pricePerBed != null ? [{ label: "Price / Bed", value: formatCurrency(pricePerBed) }] : []),
     { label: "Capital Called", value: formatCurrency(actualCapitalCalled > 0 ? actualCapitalCalled : property.vo2_raise) },
     { label: "Current NAV", value: formatCurrency(currentNav) },
     { label: "Distributions Paid", value: formatCurrency(distributionsPaid) },

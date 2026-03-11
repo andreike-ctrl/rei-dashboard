@@ -185,13 +185,9 @@ export function PropertyDetail() {
           title="Occupancy"
           formatValue={(v: number) => `${v.toFixed(1)}%`}
           color="#0d9488"
-        />
-        <MetricChart
-          metrics={metrics}
-          metricType="BUDGETEDOCCUPANCY"
-          title="Budgeted Occupancy"
-          formatValue={(v: number) => `${v.toFixed(1)}%`}
-          color="#6ee7b7"
+          metricType2="BUDGETEDOCCUPANCY"
+          label2="Budgeted"
+          color2="#6ee7b7"
         />
         <MetricChart
           metrics={metrics}
@@ -201,33 +197,9 @@ export function PropertyDetail() {
             v.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 })
           }
           color="#1e40af"
-        />
-        <MetricChart
-          metrics={metrics}
-          metricType="BUDGETEDAVGRENT"
-          title="Budgeted Average Rent"
-          formatValue={(v: number) =>
-            v.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 })
-          }
-          color="#93c5fd"
-        />
-        <MetricChart
-          metrics={metrics}
-          metricType="CAPEX"
-          title="CapEx"
-          formatValue={(v: number) =>
-            v.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 })
-          }
-          color="#f59e0b"
-        />
-        <MetricChart
-          metrics={metrics}
-          metricType="BUDGETEDCAPEX"
-          title="Budgeted CapEx"
-          formatValue={(v: number) =>
-            v.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 })
-          }
-          color="#fcd34d"
+          metricType2="BUDGETEDAVGRENT"
+          label2="Budgeted"
+          color2="#93c5fd"
         />
       </div>
       <DividendsChart transactions={transactions} />

@@ -127,7 +127,7 @@ function buildPayload(f: Fields) {
     exit_date: f.exit_date || null,
     units: int(f.units),
     buildings: int(f.buildings),
-    beds: f.beds.trim() || null,
+    beds: int(f.beds) != null ? String(int(f.beds)) : null,
     vo2_raise: num(f.vo2_raise),
     total_equity: num(f.total_equity),
     total_debt: num(f.total_debt),
@@ -493,11 +493,12 @@ export function PropertyForm({ properties }: Props) {
                 Beds
               </label>
               <input
-                type="text"
+                type="number"
+                step="1"
                 value={fields.beds}
                 onChange={(e) => set("beds", e.target.value)}
                 className={inputClass}
-                placeholder="e.g. 1BR/2BR/3BR"
+                placeholder="e.g. 400"
               />
             </div>
           </div>

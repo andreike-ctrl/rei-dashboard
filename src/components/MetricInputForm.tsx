@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import {
@@ -44,6 +44,42 @@ const METRIC_GROUPS = [
 
 const ALL_METRICS = METRIC_GROUPS.flatMap((g) => g.metrics);
 
+// Quarter-end dates: last 12 quarters + next 2
+function buildQuarterOptions(): { label: string; date: string }[] {
+  const QUARTER_ENDS = [
+    { m: 2, d: 31, q: "Q1" },
+    { m: 5, d: 30, q: "Q2" },
+    { m: 8, d: 30, q: "Q3" },
+    { m: 11, d: 31, q: "Q4" },
+  ];
+  const now = new Date();
+  let year = now.getFullYear();
+  let qIdx = QUARTER_ENDS.findIndex((_, i) => {
+    const next = QUARTER_ENDS[i + 1];
+    return !next || now.getMonth() <= QUARTER_ENDS[i].m;
+  });
+
+  const options: { label: string; date: string }[] = [];
+  // 2 future + 12 past = 14 total
+  let count = 0;
+  let y = year;
+  let qi = qIdx + 2; // start 2 ahead
+
+  while (options.length < 14) {
+    if (qi >= 4) { qi -= 4; y += 1; }
+    if (qi < 0) { qi += 4; y -= 1; }
+    const { m, d, q } = QUARTER_ENDS[qi];
+    const mm = String(m + 1).padStart(2, "0");
+    options.push({ label: `${q} ${y}`, date: `${y}-${mm}-${d}` });
+    qi--;
+    count++;
+    if (count > 20) break; // safety
+  }
+  return options;
+}
+
+const QUARTER_OPTIONS = buildQuarterOptions();
+
 const inputClass =
   "h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1";
 
@@ -59,22 +95,62 @@ interface MetricInputFormProps {
 
 export function MetricInputForm({ properties }: MetricInputFormProps) {
   const [propertyId, setPropertyId] = useState<number | null>(null);
-  const [asOfDate, setAsOfDate] = useState(
-    new Date().toISOString().slice(0, 10)
-  );
+  const [quarterDate, setQuarterDate] = useState(QUARTER_OPTIONS[2]?.date ?? "");
   const [values, setValues] = useState<Record<string, string>>(emptyValues);
   const [notes, setNotes] = useState("");
+  const [loadingExisting, setLoadingExisting] = useState(false);
+  const [hasExisting, setHasExisting] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [submitCount, setSubmitCount] = useState(0);
 
+  // Fetch existing metrics when property + quarter changes
+  useEffect(() => {
+    if (!propertyId || !quarterDate) {
+      setValues(emptyValues());
+      setHasExisting(false);
+      return;
+    }
+
+    let cancelled = false;
+    setLoadingExisting(true);
+
+    supabase
+      .from("metrics")
+      .select("metric_type, metric_value, notes")
+      .eq("property_id", propertyId)
+      .eq("as_of_date", quarterDate)
+      .then(({ data }) => {
+        if (cancelled) return;
+        setLoadingExisting(false);
+        if (!data || data.length === 0) {
+          setValues(emptyValues());
+          setHasExisting(false);
+          return;
+        }
+        setHasExisting(true);
+        const filled = emptyValues();
+        let existingNotes = "";
+        for (const row of data) {
+          if (row.metric_type in filled) {
+            filled[row.metric_type] = String(row.metric_value);
+          }
+          if (row.notes) existingNotes = row.notes;
+        }
+        setValues(filled);
+        setNotes(existingNotes);
+      });
+
+    return () => { cancelled = true; };
+  }, [propertyId, quarterDate]);
+
   const filledCount = Object.values(values).filter(
     (v) => v !== "" && !isNaN(parseFloat(v))
   ).length;
 
-  const isValid = propertyId != null && asOfDate !== "" && filledCount > 0;
+  const isValid = propertyId != null && quarterDate !== "" && filledCount > 0;
 
   function handleValueChange(metricType: string, val: string) {
     setValues((prev) => ({ ...prev, [metricType]: val }));
@@ -86,21 +162,34 @@ export function MetricInputForm({ properties }: MetricInputFormProps) {
     setSubmitting(true);
     setSubmitError(null);
 
+    // Delete existing rows for this property + quarter, then insert fresh
+    const { error: deleteErr } = await supabase
+      .from("metrics")
+      .delete()
+      .eq("property_id", propertyId)
+      .eq("as_of_date", quarterDate);
+
+    if (deleteErr) {
+      setSubmitError(deleteErr.message);
+      setSubmitting(false);
+      return;
+    }
+
     const rows = ALL_METRICS.filter(
       (m) => values[m.type] !== "" && !isNaN(parseFloat(values[m.type]))
     ).map((m) => ({
       property_id: propertyId,
-      as_of_date: asOfDate,
+      as_of_date: quarterDate,
       metric_type: m.type,
       metric_value: parseFloat(values[m.type]),
       units: m.units,
       notes: notes || null,
     }));
 
-    const { error } = await supabase.from("metrics").insert(rows);
+    const { error: insertErr } = await supabase.from("metrics").insert(rows);
 
-    if (error) {
-      setSubmitError(error.message);
+    if (insertErr) {
+      setSubmitError(insertErr.message);
     } else {
       setSubmitCount(rows.length);
       setSubmitted(true);
@@ -111,26 +200,28 @@ export function MetricInputForm({ properties }: MetricInputFormProps) {
 
   function handleReset() {
     setPropertyId(null);
-    setAsOfDate(new Date().toISOString().slice(0, 10));
+    setQuarterDate(QUARTER_OPTIONS[2]?.date ?? "");
     setValues(emptyValues());
     setNotes("");
     setSubmitError(null);
     setSubmitted(false);
     setSubmitCount(0);
+    setHasExisting(false);
   }
 
   if (submitted) {
     const property = properties.find((p) => p.property_id === propertyId);
+    const quarterLabel = QUARTER_OPTIONS.find((q) => q.date === quarterDate)?.label ?? quarterDate;
     return (
       <Card>
         <CardContent className="py-12 text-center">
           <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-600" />
           <h3 className="mt-4 text-lg font-semibold text-foreground">
-            Metrics Submitted
+            Metrics {hasExisting ? "Updated" : "Submitted"}
           </h3>
           <p className="mt-2 text-sm text-muted-foreground">
-            Inserted {submitCount} metric{submitCount !== 1 ? "s" : ""} for{" "}
-            {property?.name ?? "Unknown"} as of {asOfDate}.
+            {hasExisting ? "Updated" : "Inserted"} {submitCount} metric{submitCount !== 1 ? "s" : ""} for{" "}
+            {property?.name ?? "Unknown"} — {quarterLabel}.
           </p>
           <button
             onClick={handleReset}
@@ -144,13 +235,19 @@ export function MetricInputForm({ properties }: MetricInputFormProps) {
     );
   }
 
+  const quarterLabel = QUARTER_OPTIONS.find((q) => q.date === quarterDate)?.label ?? "";
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>New Metrics</CardTitle>
+        <CardTitle>
+          {hasExisting && quarterLabel
+            ? `Editing Metrics — ${quarterLabel}`
+            : "New Metrics"}
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        {/* Property + Date row */}
+        {/* Property + Quarter row */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-foreground">
@@ -175,16 +272,31 @@ export function MetricInputForm({ properties }: MetricInputFormProps) {
 
           <div>
             <label className="mb-1.5 block text-sm font-medium text-foreground">
-              As-of Date
+              Quarter
             </label>
-            <input
-              type="date"
-              value={asOfDate}
-              onChange={(e) => setAsOfDate(e.target.value)}
+            <select
+              value={quarterDate}
+              onChange={(e) => setQuarterDate(e.target.value)}
               className={inputClass}
-            />
+            >
+              {QUARTER_OPTIONS.map((q) => (
+                <option key={q.date} value={q.date}>
+                  {q.label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
+
+        {/* Existing data badge */}
+        {loadingExisting && (
+          <p className="mt-3 text-xs text-muted-foreground">Loading existing data…</p>
+        )}
+        {!loadingExisting && hasExisting && (
+          <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            Existing data found for this quarter — fields pre-filled. Saving will replace all metrics for this period.
+          </div>
+        )}
 
         {/* Metric groups */}
         <div className="mt-6 space-y-6">
@@ -207,9 +319,7 @@ export function MetricInputForm({ properties }: MetricInputFormProps) {
                       step={m.step}
                       placeholder={m.placeholder}
                       value={values[m.type]}
-                      onChange={(e) =>
-                        handleValueChange(m.type, e.target.value)
-                      }
+                      onChange={(e) => handleValueChange(m.type, e.target.value)}
                       className={inputClass}
                     />
                   </div>
@@ -229,7 +339,7 @@ export function MetricInputForm({ properties }: MetricInputFormProps) {
           </label>
           <input
             type="text"
-            placeholder="e.g. January 2025 monthly report"
+            placeholder="e.g. Q4 2024 investor report"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             className={inputClass}
@@ -244,13 +354,15 @@ export function MetricInputForm({ properties }: MetricInputFormProps) {
 
         <button
           onClick={handleSubmit}
-          disabled={!isValid || submitting}
+          disabled={!isValid || submitting || loadingExisting}
           style={{ paddingLeft: "2.5rem", paddingRight: "2.5rem" }}
           className="mt-6 h-10 rounded-md bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {submitting
-            ? "Submitting..."
-            : `Submit ${filledCount} Metric${filledCount !== 1 ? "s" : ""}`}
+            ? "Saving..."
+            : hasExisting
+              ? `Update ${filledCount} Metric${filledCount !== 1 ? "s" : ""}`
+              : `Submit ${filledCount} Metric${filledCount !== 1 ? "s" : ""}`}
         </button>
       </CardContent>
     </Card>

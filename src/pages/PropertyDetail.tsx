@@ -201,6 +201,18 @@ export function PropertyDetail() {
           label2="Budgeted"
           color2="#93c5fd"
         />
+        <MetricChart
+          metrics={metrics}
+          metricType="NOI"
+          title="NOI"
+          formatValue={(v: number) =>
+            v.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 })
+          }
+          color="#7c3aed"
+          metricType2="BUDGETEDNOI"
+          label2="Budgeted"
+          color2="#c4b5fd"
+        />
       </div>
       <DividendsChart transactions={transactions} />
       <TransactionHistory

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { PropertyHeader } from "@/components/PropertyHeader";
@@ -201,26 +202,56 @@ export function PropertyDetail() {
           label2="Budgeted"
           color2="#93c5fd"
         />
-        <MetricChart
-          metrics={metrics}
-          metricType="NOI"
-          title="NOI"
-          formatValue={(v: number) =>
-            v.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 })
-          }
-          color="#7c3aed"
-          metricType2="BUDGETEDNOI"
-          label2="Budgeted"
-          color2="#c4b5fd"
-        />
       </div>
       <DividendsChart transactions={transactions} />
+      <ExpandableSection title="Financial Charts">
+        <div className="grid gap-4 lg:grid-cols-2">
+          <MetricChart
+            metrics={metrics}
+            metricType="NOI"
+            title="NOI"
+            formatValue={(v: number) =>
+              v.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 })
+            }
+            color="#7c3aed"
+            metricType2="BUDGETEDNOI"
+            label2="Budgeted"
+            color2="#c4b5fd"
+          />
+        </div>
+      </ExpandableSection>
       <TransactionHistory
         transactions={transactions}
         properties={property ? [property] : []}
         investors={investors}
         clients={clients}
       />
+    </div>
+  );
+}
+
+function ExpandableSection({
+  title,
+  children,
+  defaultOpen = true,
+}: {
+  title: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="rounded-xl border border-border bg-card">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between px-6 py-4 text-left"
+      >
+        <span className="text-base font-semibold text-foreground">{title}</span>
+        <ChevronDown
+          className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      {open && <div className="px-6 pb-6">{children}</div>}
     </div>
   );
 }

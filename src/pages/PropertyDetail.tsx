@@ -204,7 +204,7 @@ export function PropertyDetail() {
         />
       </div>
       <DividendsChart transactions={transactions} />
-      <ExpandableSection title="Financial Charts" defaultOpen={false}>
+      <ExpandableSection title="Other Financial Charts" defaultOpen={false}>
         <div className="grid gap-4 lg:grid-cols-2">
           <MetricChart
             metrics={metrics}

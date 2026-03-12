@@ -13,12 +13,14 @@ import type { Transaction } from "@/types/database";
 
 interface DividendsChartProps {
   transactions: Transaction[];
+  vo2Raise?: number | null;
 }
 
 interface ChartDataPoint {
   label: string;
   sortKey: string;
   amount: number;
+  yield?: number;
 }
 
 function formatHalf(dateStr: string): { label: string; sortKey: string } {
@@ -54,8 +56,11 @@ function formatYAxisTick(value: number): string {
   return `$${value}`;
 }
 
-export function DividendsChart({ transactions }: DividendsChartProps) {
-  const data = buildHalfYearDividends(transactions);
+export function DividendsChart({ transactions, vo2Raise }: DividendsChartProps) {
+  const data = buildHalfYearDividends(transactions).map((d) => ({
+    ...d,
+    yield: vo2Raise ? d.amount / vo2Raise : undefined,
+  }));
 
   if (data.length === 0) {
     return (
@@ -110,6 +115,11 @@ export function DividendsChart({ transactions }: DividendsChartProps) {
                       <p className="text-sm font-semibold text-foreground">
                         {formatCurrency(point.amount)}
                       </p>
+                      {point.yield != null && (
+                        <p className="text-xs text-muted-foreground">
+                          Yield: {(point.yield * 100).toFixed(2)}%
+                        </p>
+                      )}
                     </div>
                   );
                 }}

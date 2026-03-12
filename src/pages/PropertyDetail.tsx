@@ -203,7 +203,7 @@ export function PropertyDetail() {
           color2="#93c5fd"
         />
       </div>
-      <DividendsChart transactions={transactions} />
+      <DividendsChart transactions={transactions} vo2Raise={property.vo2_raise ?? null} />
       <ExpandableSection title="Other Financial Charts" defaultOpen={false}>
         <div className="grid gap-4 lg:grid-cols-2">
           <MetricChart

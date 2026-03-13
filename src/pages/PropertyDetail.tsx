@@ -218,6 +218,30 @@ export function PropertyDetail() {
             label2="Budgeted"
             color2="#c4b5fd"
           />
+          <MetricChart
+            metrics={metrics}
+            metricType="TOTALREV"
+            title="Revenue"
+            formatValue={(v: number) =>
+              v.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 })
+            }
+            color="#0369a1"
+            metricType2="BUDGETEDREV"
+            label2="Budgeted"
+            color2="#7dd3fc"
+          />
+          <MetricChart
+            metrics={metrics}
+            metricType="TOTALOPEX"
+            title="OpEx"
+            formatValue={(v: number) =>
+              v.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 })
+            }
+            color="#b45309"
+            metricType2="BUDGETEDOPEX"
+            label2="Budgeted"
+            color2="#fcd34d"
+          />
         </div>
       </ExpandableSection>
       <TransactionHistory

@@ -173,11 +173,13 @@ export function PropertyDetail() {
         transactions={transactions}
         valuations={valuations}
       />
-      <CapTable
-        transactions={transactions}
-        investors={investors}
-        clients={clients}
-      />
+      <ExpandableSection title="Cap Table" defaultOpen={true}>
+        <CapTable
+          transactions={transactions}
+          investors={investors}
+          clients={clients}
+        />
+      </ExpandableSection>
       <ValuationChart valuations={valuations} />
       <div className="grid gap-4 lg:grid-cols-2">
         <MetricChart

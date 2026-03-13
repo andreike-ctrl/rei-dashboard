@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { formatNumber } from "@/lib/format";
 import type { Transaction, Investor, Client } from "@/types/database";
 
@@ -77,26 +76,14 @@ export function CapTable({ transactions, investors, clients }: CapTableProps) {
 
   if (rows.rows.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Cap Table</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            No ownership data available.
-          </p>
-        </CardContent>
-      </Card>
+      <p className="py-8 text-center text-sm text-muted-foreground">
+        No ownership data available.
+      </p>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Cap Table</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
+    <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border">
@@ -158,8 +145,6 @@ export function CapTable({ transactions, investors, clients }: CapTableProps) {
               </tr>
             </tfoot>
           </table>
-        </div>
-      </CardContent>
-    </Card>
+    </div>
   );
 }

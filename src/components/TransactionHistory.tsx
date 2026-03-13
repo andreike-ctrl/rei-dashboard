@@ -9,6 +9,8 @@ interface TransactionHistoryProps {
   /** When provided, shows a "Client" column instead of "Property" */
   investors?: Investor[];
   clients?: Client[];
+  /** Render without Card wrapper (for use inside ExpandableSection) */
+  bare?: boolean;
 }
 
 const TYPE_COLORS: Record<string, string> = {
@@ -36,6 +38,7 @@ export function TransactionHistory({
   properties,
   investors,
   clients,
+  bare = false,
 }: TransactionHistoryProps) {
   const showClient = investors != null && clients != null;
   const [showAll, setShowAll] = useState(false);
@@ -80,16 +83,16 @@ export function TransactionHistory({
   }
 
   if (rows.length === 0) {
+    const empty = (
+      <p className="py-8 text-center text-sm text-muted-foreground">
+        No transactions found.
+      </p>
+    );
+    if (bare) return empty;
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>Transaction History</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            No transactions found.
-          </p>
-        </CardContent>
+        <CardHeader><CardTitle>Transaction History</CardTitle></CardHeader>
+        <CardContent>{empty}</CardContent>
       </Card>
     );
   }
@@ -97,18 +100,9 @@ export function TransactionHistory({
   const displayed = showAll ? filtered : filtered.slice(0, INITIAL_LIMIT);
   const hasMore = filtered.length > INITIAL_LIMIT;
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          Transaction History
-          <span className="ml-2 text-sm font-normal text-muted-foreground">
-            ({filtered.length} transaction{filtered.length !== 1 ? "s" : ""})
-          </span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {/* Type filter chips */}
+  const inner = (
+    <>
+      {/* Type filter chips */}
         <div className="mb-4 flex flex-wrap gap-2">
           {allTypes.map((type) => {
             const active = selectedTypes.has(type);
@@ -238,7 +232,22 @@ export function TransactionHistory({
             Show all {filtered.length} transactions
           </button>
         )}
-      </CardContent>
+    </>
+  );
+
+  if (bare) return inner;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          Transaction History
+          <span className="ml-2 text-sm font-normal text-muted-foreground">
+            ({filtered.length} transaction{filtered.length !== 1 ? "s" : ""})
+          </span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>{inner}</CardContent>
     </Card>
   );
 }

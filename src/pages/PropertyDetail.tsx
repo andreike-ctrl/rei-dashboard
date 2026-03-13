@@ -173,7 +173,7 @@ export function PropertyDetail() {
         transactions={transactions}
         valuations={valuations}
       />
-      <ExpandableSection title="Cap Table" defaultOpen={true}>
+      <ExpandableSection title="Cap Table" defaultOpen={false}>
         <CapTable
           transactions={transactions}
           investors={investors}
@@ -246,12 +246,15 @@ export function PropertyDetail() {
           />
         </div>
       </ExpandableSection>
-      <TransactionHistory
-        transactions={transactions}
-        properties={property ? [property] : []}
-        investors={investors}
-        clients={clients}
-      />
+      <ExpandableSection title="Transaction History" defaultOpen={false}>
+        <TransactionHistory
+          transactions={transactions}
+          properties={property ? [property] : []}
+          investors={investors}
+          clients={clients}
+          bare
+        />
+      </ExpandableSection>
     </div>
   );
 }

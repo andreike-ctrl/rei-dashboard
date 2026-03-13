@@ -581,7 +581,7 @@ export function PropertyReportPDF({ property, valuations: _valuations, transacti
                 {Array.from({ length: Math.ceil(photos.length / 2) }, (_, row) => {
                   const pair = photos.slice(row * 2, row * 2 + 2);
                   return (
-                    <View key={row} style={{ flexDirection: "row", gap: 10 }}>
+                    <View key={row} wrap={false} style={{ flexDirection: "row", gap: 10 }}>
                       {pair.map((photo, col) => (
                         <View key={col} style={{ flex: 1 }}>
                           <Image

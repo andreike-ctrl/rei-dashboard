@@ -586,7 +586,7 @@ export function PropertyReportPDF({ property, valuations: _valuations, transacti
                         <View key={col} style={{ flex: 1 }}>
                           <Image
                             src={photo.dataUrl}
-                            style={{ width: "100%", height: 160, borderRadius: 4, objectFit: "cover" }}
+                            style={{ width: "100%", height: 160, objectFit: "cover" }}
                           />
                           {photo.caption.trim().length > 0 && (
                             <Text style={{ fontSize: 7.5, color: C.gray600, marginTop: 4, textAlign: "center" }}>

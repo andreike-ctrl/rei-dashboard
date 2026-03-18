@@ -23,7 +23,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
 
   return (
     <Link to={`/property/${property.property_id}`} className="group block">
-      <Card className="transition-shadow hover:shadow-md">
+      <Card>
         <CardContent className="p-5">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">

@@ -154,7 +154,7 @@ export function Report() {
     <div className="flex flex-col gap-6">
 
       {/* ── Controls bar ── */}
-      <div className="rounded-xl border border-border bg-background p-6 shadow-sm">
+      <div className="rounded-xl border border-border bg-background p-6">
         <h2 className="text-base font-semibold text-foreground mb-4">Report Builder</h2>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -296,7 +296,7 @@ export function Report() {
       </div>
 
       {/* ── Preview pane ── */}
-      <div className="rounded-xl border border-border overflow-hidden shadow-sm">
+      <div className="rounded-xl border border-border overflow-hidden">
         {!selectedPropertyId ? (
           <div className="flex h-[700px] items-center justify-center bg-muted/20">
             <p className="text-sm text-muted-foreground">Select a property to preview the report.</p>

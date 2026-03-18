@@ -147,7 +147,7 @@ export function Report() {
   ) : null;
 
   const fileName = property
-    ? `VO2 Report ${period.split(" ").reverse().join(" ")} ${property.name}.pdf`
+    ? `VO2 Report ${period.split(" ").reverse().join(" ")} - ${property.name}.pdf`
     : "VO2 Report.pdf";
 
   return (

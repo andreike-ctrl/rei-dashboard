@@ -446,15 +446,20 @@ export function PropertyReportPDF({ property, valuations: _valuations, transacti
   const generatedDate = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 
   // ── Chart data ──
-  const occupancyData = metrics
-    .filter((m) => m.metric_type === "OCCUPANCY")
-    .sort((a, b) => a.as_of_date.localeCompare(b.as_of_date))
-    .map((m) => ({ label: fmtHalf(m.as_of_date), value: m.metric_value }));
+  // For each half-year period keep only the latest data point (highest date).
+  function latestPerHalf(type: string) {
+    const byHalf = new Map<string, Metric>();
+    metrics
+      .filter((m) => m.metric_type === type)
+      .sort((a, b) => a.as_of_date.localeCompare(b.as_of_date))
+      .forEach((m) => byHalf.set(fmtHalf(m.as_of_date), m));
+    return Array.from(byHalf.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([label, m]) => ({ label, value: m.metric_value }));
+  }
 
-  const avgRentData = metrics
-    .filter((m) => m.metric_type === "AVGRENT")
-    .sort((a, b) => a.as_of_date.localeCompare(b.as_of_date))
-    .map((m) => ({ label: fmtHalf(m.as_of_date), value: m.metric_value }));
+  const occupancyData = latestPerHalf("OCCUPANCY");
+  const avgRentData = latestPerHalf("AVGRENT");
 
 
   // ── Map height matched to occupancy chart ──

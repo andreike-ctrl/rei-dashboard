@@ -345,8 +345,8 @@ function LineChart({
 
   const W = 515;
   const H = 130;
-  const padL = 8;
-  const padR = 8;
+  const padL = 24;
+  const padR = 24;
   const padT = 24;
   const padB = 20;
   const chartW = W - padL - padR;

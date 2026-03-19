@@ -453,8 +453,12 @@ export function PropertyReportPDF({ property, valuations: _valuations, transacti
       .filter((m) => m.metric_type === type)
       .sort((a, b) => a.as_of_date.localeCompare(b.as_of_date))
       .forEach((m) => byHalf.set(fmtHalf(m.as_of_date), m));
+    function halfSortKey(label: string) {
+      const [h, y] = label.split(" ");
+      return Number(y) * 10 + (h === "H1" ? 1 : 2);
+    }
     return Array.from(byHalf.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
+      .sort(([a], [b]) => halfSortKey(a) - halfSortKey(b))
       .map(([label, m]) => ({ label, value: m.metric_value }));
   }
 

@@ -117,7 +117,7 @@ export function DividendsChart({ transactions, vo2Raise }: DividendsChartProps) 
                       </p>
                       {point.yield != null && (
                         <p className="text-xs text-muted-foreground">
-                          Yield: {(point.yield * 100).toFixed(2)}%
+                          Dist / Raise: {(point.yield * 100).toFixed(2)}%
                         </p>
                       )}
                     </div>

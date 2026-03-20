@@ -577,7 +577,7 @@ export function PropertyReportPDF({ property, valuations: _valuations, transacti
           {/* ── Manager Commentary ── */}
           {commentary && commentary.trim().length > 0 && (
             <View style={s.section} wrap={false}>
-              <SectionTitle>Manager Commentary</SectionTitle>
+              <SectionTitle>{property.name.toUpperCase()} PORTFOLIO UPDATE</SectionTitle>
               <Text style={{ fontSize: 9, color: C.gray800, lineHeight: 1.6 }}>{commentary.trim()}</Text>
             </View>
           )}

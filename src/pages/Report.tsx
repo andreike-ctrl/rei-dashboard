@@ -235,7 +235,7 @@ export function Report() {
           <textarea
             value={commentary}
             onChange={(e) => setCommentary(e.target.value)}
-            rows={4}
+            rows={8}
             placeholder="Add text here"
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
           />

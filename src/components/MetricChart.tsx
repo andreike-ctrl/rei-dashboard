@@ -150,6 +150,16 @@ export function MetricChart({
                           {label2}: {formatValue(point.value2)}
                         </p>
                       )}
+                      {point.value != null && point.value2 != null && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {(() => {
+                            const diff = point.value - point.value2;
+                            const pct = (diff / Math.abs(point.value2)) * 100;
+                            const sign = diff >= 0 ? "+" : "";
+                            return `Variance: ${sign}${formatValue(diff)} / ${sign}${pct.toFixed(1)}%`;
+                          })()}
+                        </p>
+                      )}
                     </div>
                   );
                 }}

@@ -36,6 +36,7 @@ const METRIC_GROUPS = [
       { type: "BUDGETEDOPEX", label: "Budgeted OpEx", units: "USD", step: "1", placeholder: "0" },
       { type: "BUDGETEDNOI", label: "Budgeted NOI", units: "USD", step: "1", placeholder: "0" },
       { type: "BUDGETEDCAPEX", label: "Budgeted CapEx", units: "USD", step: "1", placeholder: "0" },
+      { type: "BUDGETEDDEBTSERVICE", label: "Budgeted Debt Service", units: "USD", step: "1", placeholder: "0" },
       { type: "BUDGETEDOCCUPANCY", label: "Budgeted Occupancy", units: "PCT", step: "0.1", placeholder: "e.g. 95.0" },
       { type: "BUDGETEDAVGRENT", label: "Budgeted Avg Rent", units: "USD", step: "1", placeholder: "e.g. 1500" },
     ],

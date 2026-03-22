@@ -243,6 +243,18 @@ export function PropertyDetail() {
             label2="Budgeted"
             color2="#fcd34d"
           />
+          <MetricChart
+            metrics={metrics}
+            metricType="DEBTSERVICE"
+            title="Debt Service"
+            formatValue={(v: number) =>
+              v.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 })
+            }
+            color="#be123c"
+            metricType2="BUDGETEDDEBTSERVICE"
+            label2="Budgeted"
+            color2="#fda4af"
+          />
         </div>
       </ExpandableSection>
       <DividendsChart transactions={transactions} vo2Raise={property.vo2_raise ?? null} />

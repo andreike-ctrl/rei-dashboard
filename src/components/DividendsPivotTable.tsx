@@ -1,6 +1,8 @@
 import { useMemo } from "react";
+import { Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { formatCurrency } from "@/lib/format";
+import { downloadCsv } from "@/lib/csv";
 import type { Transaction, Property } from "@/types/database";
 
 interface DividendsPivotTableProps {
@@ -87,10 +89,28 @@ export function DividendsPivotTable({
     return null;
   }
 
+  function handleDownload() {
+    downloadCsv(
+      "distributions-by-property-period.csv",
+      ["Property", ...halfColumns.map((h) => h.label), "Total"],
+      [
+        ...propertyRows.map((prop) => [
+          prop.name,
+          ...halfColumns.map((h) => cellMap.get(`${prop.id}-${h.sortKey}`) ?? 0),
+          propertyTotals.get(prop.id) ?? 0,
+        ]),
+        ["Total", ...halfColumns.map((h) => columnTotals.get(h.sortKey) ?? 0), grandTotal],
+      ]
+    );
+  }
+
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Distributions by Property &amp; Period</CardTitle>
+        <button onClick={handleDownload} className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-secondary/60 transition-colors border border-border">
+          <Download className="h-3.5 w-3.5" /> CSV
+        </button>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">

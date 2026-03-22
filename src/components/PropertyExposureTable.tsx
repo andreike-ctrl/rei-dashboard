@@ -1,7 +1,9 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
+import { Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { formatCurrency, formatMultiple } from "@/lib/format";
+import { downloadCsv } from "@/lib/csv";
 import type { Transaction, Investor, Property, Valuation } from "@/types/database";
 
 const FUNDING_TYPES = new Set(["Capital Call", "Funding", "Purchase"]);
@@ -145,10 +147,33 @@ export function PropertyExposureTable({
     );
   }
 
+  function handleDownload() {
+    downloadCsv(
+      "property-exposure.csv",
+      ["Property", "Ownership %", "Capital Invested", "Current NAV", "Distributions", "Other Proceeds", "Est. MOIC", "Profit / Loss"],
+      [
+        ...rows.map((r) => [
+          r.propertyName,
+          (r.ownershipPercent * 100).toFixed(2) + "%",
+          r.capitalInvested,
+          r.currentNav,
+          r.dividends,
+          r.otherProceeds,
+          r.moic != null ? r.moic.toFixed(2) + "x" : "",
+          r.profitLoss,
+        ]),
+        ["Total", "", totals.capitalInvested, totals.currentNav, totals.dividends, totals.otherProceeds, totals.moic != null ? totals.moic.toFixed(2) + "x" : "", totals.profitLoss],
+      ]
+    );
+  }
+
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Property Exposure</CardTitle>
+        <button onClick={handleDownload} className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-secondary/60 transition-colors border border-border">
+          <Download className="h-3.5 w-3.5" /> CSV
+        </button>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">

@@ -279,6 +279,7 @@ export function PropertyDetail() {
             color2="#fda4af"
           />
         </div>
+        <div className="mt-4">
         <MetricChart
           metrics={allMetrics}
           metricType="NOI_MINUS_DS"
@@ -291,6 +292,7 @@ export function PropertyDetail() {
           label2="Budgeted"
           color2="#6ee7b7"
         />
+        </div>
       </ExpandableSection>
       <DividendsChart transactions={transactions} vo2Raise={property.vo2_raise ?? null} />
       <ExpandableSection title="Transaction History" defaultOpen={false}>

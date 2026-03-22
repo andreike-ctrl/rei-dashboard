@@ -164,6 +164,29 @@ export function PropertyDetail() {
   if (error) return <ErrorMessage message={error} />;
   if (!property) return <ErrorMessage message="Property not found." />;
 
+  // Compute NOI - Debt Service derived metrics
+  const byDate = (type: string) =>
+    new Map(metrics.filter((m) => m.metric_type === type).map((m) => [m.as_of_date, Number(m.metric_value)]));
+
+  const noiMap = byDate("NOI");
+  const dsMap = byDate("DEBTSERVICE");
+  const budNoiMap = byDate("BUDGETEDNOI");
+  const budDsMap = byDate("BUDGETEDDEBTSERVICE");
+
+  const allDates = new Set([...noiMap.keys(), ...dsMap.keys()]);
+  const budDates = new Set([...budNoiMap.keys(), ...budDsMap.keys()]);
+
+  const derivedMetrics: Metric[] = [
+    ...[...allDates]
+      .filter((d) => noiMap.has(d) && dsMap.has(d))
+      .map((d) => ({ metric_id: 0, property_id: property.property_id, as_of_date: d, metric_type: "NOI_MINUS_DS", metric_value: noiMap.get(d)! - dsMap.get(d)!, units: "", notes: null })),
+    ...[...budDates]
+      .filter((d) => budNoiMap.has(d) && budDsMap.has(d))
+      .map((d) => ({ metric_id: 0, property_id: property.property_id, as_of_date: d, metric_type: "BUDGETED_NOI_MINUS_DS", metric_value: budNoiMap.get(d)! - budDsMap.get(d)!, units: "", notes: null })),
+  ];
+
+  const allMetrics = [...metrics, ...derivedMetrics];
+
   return (
     <div className="space-y-6">
       <PropertyHeader property={property} />
@@ -256,6 +279,18 @@ export function PropertyDetail() {
             color2="#fda4af"
           />
         </div>
+        <MetricChart
+          metrics={allMetrics}
+          metricType="NOI_MINUS_DS"
+          title="NOI − Debt Service"
+          formatValue={(v: number) =>
+            v.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 })
+          }
+          color="#059669"
+          metricType2="BUDGETED_NOI_MINUS_DS"
+          label2="Budgeted"
+          color2="#6ee7b7"
+        />
       </ExpandableSection>
       <DividendsChart transactions={transactions} vo2Raise={property.vo2_raise ?? null} />
       <ExpandableSection title="Transaction History" defaultOpen={false}>

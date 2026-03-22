@@ -205,7 +205,6 @@ export function PropertyDetail() {
           color2="#93c5fd"
         />
       </div>
-      <DividendsChart transactions={transactions} vo2Raise={property.vo2_raise ?? null} />
       <ExpandableSection title="Other Financial Charts" defaultOpen={false}>
         <div className="grid gap-4 lg:grid-cols-2">
           <MetricChart
@@ -246,6 +245,7 @@ export function PropertyDetail() {
           />
         </div>
       </ExpandableSection>
+      <DividendsChart transactions={transactions} vo2Raise={property.vo2_raise ?? null} />
       <ExpandableSection title="Transaction History" defaultOpen={false}>
         <TransactionHistory
           transactions={transactions}
@@ -270,7 +270,7 @@ function ExpandableSection({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="rounded-xl border border-border bg-card">
+    <div className="border border-border bg-card">
       <button
         onClick={() => setOpen((o) => !o)}
         className="flex w-full items-center justify-between px-6 py-4 text-left"

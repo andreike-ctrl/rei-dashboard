@@ -285,7 +285,6 @@ export function NavReportPDF({ client, investors: _investors, period, snapshot }
           </View>
           <View style={s.headerRight}>
             <Text style={s.headerPeriod}>{`NAV Report  ·  ${period}`}</Text>
-            <Text style={s.headerDate}>Prepared {generatedDate}</Text>
           </View>
         </View>
 

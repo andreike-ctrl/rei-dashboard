@@ -48,43 +48,55 @@ const s = StyleSheet.create({
     paddingBottom: 48,
   },
   header: {
-    backgroundColor: C.navy,
+    backgroundColor: C.white,
     paddingHorizontal: 40,
     paddingTop: 2,
-    paddingBottom: 24,
+    paddingBottom: 22,
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  headerLeft: {
+    flexDirection: "column",
     alignItems: "flex-start",
   },
   headerLogo: {
     width: 80,
     objectFit: "contain",
-    marginBottom: 14,
+    marginBottom: 18,
   },
   headerLabel: {
     fontSize: 7,
-    color: "#94a3b8",
+    color: C.gray400,
     fontFamily: "Helvetica-Bold",
     letterSpacing: 1,
     textTransform: "uppercase",
+    marginBottom: 3,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontFamily: "Helvetica-Bold",
-    color: C.white,
-    marginTop: 4,
+    color: C.navy,
+    letterSpacing: 0.3,
+  },
+  headerSubtitle: {
+    fontSize: 11,
+    color: C.gray600,
+    marginTop: 3,
   },
   headerRight: {
     alignItems: "flex-end",
   },
   headerPeriod: {
-    fontSize: 16,
+    fontSize: 8,
+    color: C.gray400,
     fontFamily: "Helvetica-Bold",
-    color: C.white,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
   },
   headerDate: {
     fontSize: 8,
-    color: "#94a3b8",
+    color: C.gray400,
     marginTop: 4,
   },
   body: {
@@ -252,13 +264,13 @@ export function NavReportPDF({ client, investors: _investors, period, snapshot }
 
         {/* ── Header ── */}
         <View style={s.header}>
-          <View>
+          <View style={s.headerLeft}>
             <Image src={logoSrc} style={s.headerLogo} />
-            <Text style={s.headerLabel}>NAV Report</Text>
             <Text style={s.headerTitle}>{client.name}</Text>
+            {client.domicile ? <Text style={s.headerSubtitle}>{client.domicile}</Text> : null}
           </View>
           <View style={s.headerRight}>
-            <Text style={s.headerPeriod}>{period}</Text>
+            <Text style={s.headerPeriod}>{`NAV Report  ·  ${period}`}</Text>
             <Text style={s.headerDate}>Prepared {generatedDate}</Text>
           </View>
         </View>
@@ -267,12 +279,6 @@ export function NavReportPDF({ client, investors: _investors, period, snapshot }
 
           {/* ── Client Info ── */}
           <View style={s.clientRow}>
-            {client.domicile ? (
-              <View style={s.clientField}>
-                <Text style={s.clientLabel}>Domicile</Text>
-                <Text style={s.clientValue}>{client.domicile}</Text>
-              </View>
-            ) : null}
             {client.email ? (
               <View style={s.clientField}>
                 <Text style={s.clientLabel}>Email</Text>

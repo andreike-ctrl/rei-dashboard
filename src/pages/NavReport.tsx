@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { PDFDownloadLink } from "@react-pdf/renderer";
+import { PDFDownloadLink, PDFViewer } from "@react-pdf/renderer";
 import { Download } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { NavReportPDF } from "@/components/NavReportPDF";
@@ -246,6 +246,23 @@ export function NavReport() {
           </div>
         </div>
       </div>
+      {/* ── Preview pane ── */}
+      <div className="rounded-xl border border-border overflow-hidden">
+        {!selectedClientId ? (
+          <div className="flex h-[700px] items-center justify-center bg-muted/20">
+            <p className="text-sm text-muted-foreground">Select a client to preview the report.</p>
+          </div>
+        ) : dataLoading ? (
+          <div className="flex h-[700px] items-center justify-center bg-muted/20">
+            <Spinner />
+          </div>
+        ) : pdfReady && client && snapshot ? (
+          <PDFViewer width="100%" height={700} showToolbar={false} style={{ border: "none" }}>
+            <NavReportPDF client={client} investors={investors} period={period} snapshot={snapshot} />
+          </PDFViewer>
+        ) : null}
+      </div>
+
     </div>
   );
 }

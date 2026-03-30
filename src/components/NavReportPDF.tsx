@@ -317,8 +317,6 @@ export function NavReportPDF({ client, investors: _investors, period, snapshot }
             ))}
           </View>
 
-          <View style={{ height: 1, backgroundColor: C.gray200, marginBottom: 20 }} />
-
           {/* ── Holdings Table ── */}
           <View style={s.section}>
             <Text style={s.sectionTitle}>Holdings</Text>

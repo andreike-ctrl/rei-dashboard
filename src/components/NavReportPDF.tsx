@@ -306,19 +306,18 @@ export function NavReportPDF({ client, investors: _investors, period, snapshot }
           {/* ── Portfolio Summary ── */}
           <View style={s.section}>
             <Text style={s.sectionTitle}>Portfolio Summary</Text>
-            <View style={s.grid}>
-              {[
-                { label: "Total Invested", value: fmtCurrency(snapshot.totalCapital) },
-                { label: "Total Distributions", value: fmtCurrency(snapshot.totalDistributions) },
-                { label: "Current NAV", value: fmtCurrency(snapshot.totalNav) },
-                { label: "Est. MOIC", value: fmtMultiple(snapshot.totalMoic) },
-              ].map((item) => (
-                <View key={item.label} style={s.statBox}>
-                  <Text style={s.statLabel}>{item.label}</Text>
-                  <Text style={s.statValue}>{item.value}</Text>
-                </View>
-              ))}
-            </View>
+            {[
+              { label: "Total Capital Invested", value: fmtCurrency(snapshot.totalCapital) },
+              { label: "Current NAV", value: fmtCurrency(snapshot.totalNav) },
+              { label: "Total Distributions Received", value: fmtCurrency(snapshot.totalDistributions) },
+              { label: "Estimated Profit / Loss", value: fmtCurrency(snapshot.totalProfitLoss) },
+              { label: "Estimated MOIC", value: fmtMultiple(snapshot.totalMoic) },
+            ].map((item) => (
+              <View key={item.label} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: C.gray100 }}>
+                <Text style={{ fontSize: 8.5, color: C.gray600 }}>{item.label}</Text>
+                <Text style={{ fontSize: 8.5, fontFamily: "Helvetica-Bold", color: C.gray800 }}>{item.value}</Text>
+              </View>
+            ))}
           </View>
 
           {/* ── Holdings Table ── */}

@@ -166,7 +166,7 @@ const s = StyleSheet.create({
   },
   clientDateLabel: {
     fontSize: 7,
-    color: C.gray400,
+    color: C.gray800,
     fontFamily: "Helvetica-Bold",
     letterSpacing: 0.5,
     textTransform: "uppercase",
@@ -210,7 +210,7 @@ const s = StyleSheet.create({
   thText: {
     fontSize: 7,
     fontFamily: "Helvetica-Bold",
-    color: C.gray400,
+    color: C.gray800,
     letterSpacing: 0.5,
     textTransform: "uppercase",
   },

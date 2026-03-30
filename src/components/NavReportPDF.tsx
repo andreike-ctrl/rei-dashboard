@@ -109,7 +109,7 @@ const s = StyleSheet.create({
   sectionTitle: {
     fontSize: 8,
     fontFamily: "Helvetica-Bold",
-    color: C.gray400,
+    color: C.gray800,
     letterSpacing: 1,
     textTransform: "uppercase",
     marginBottom: 8,

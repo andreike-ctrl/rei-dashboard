@@ -332,13 +332,13 @@ export function NavReportPDF({ client, investors: _investors, period, snapshot }
               <Text style={[s.thText, { flex: 2, textAlign: "right" }]}>Profit / Loss</Text>
             </View>
             {snapshot.rows.map((row, i) => (
-              <View key={row.property.property_id} style={i % 2 === 0 ? s.tableRow : s.tableRowAlt}>
+              <View key={row.property.property_id} style={s.tableRow}>
                 <Text style={[s.tdText, { flex: 3 }]}>{row.property.name}</Text>
                 <Text style={[s.tdText, { flex: 2, textAlign: "right" }]}>{fmtCurrency(row.capital)}</Text>
                 <Text style={[s.tdText, { flex: 2, textAlign: "right" }]}>{row.nav != null ? fmtCurrency(row.nav) : "—"}</Text>
                 <Text style={[s.tdText, { flex: 2, textAlign: "right" }]}>{fmtCurrency(row.distributions)}</Text>
                 <Text style={[s.tdText, { flex: 1, textAlign: "right" }]}>{fmtMultiple(row.moic)}</Text>
-                <Text style={[s.tdText, { flex: 2, textAlign: "right", color: row.profitLoss >= 0 ? "#15803d" : "#dc2626" }]}>{fmtCurrency(row.profitLoss)}</Text>
+                <Text style={[s.tdText, { flex: 2, textAlign: "right" }]}>{fmtCurrency(row.profitLoss)}</Text>
               </View>
             ))}
             <View style={s.tableFooter}>
@@ -347,7 +347,7 @@ export function NavReportPDF({ client, investors: _investors, period, snapshot }
               <Text style={[s.tdBold, { flex: 2, textAlign: "right" }]}>{fmtCurrency(snapshot.totalNav)}</Text>
               <Text style={[s.tdBold, { flex: 2, textAlign: "right" }]}>{fmtCurrency(snapshot.totalDistributions)}</Text>
               <Text style={[s.tdBold, { flex: 1, textAlign: "right" }]}>{fmtMultiple(snapshot.totalMoic)}</Text>
-              <Text style={[s.tdBold, { flex: 2, textAlign: "right", color: snapshot.totalProfitLoss >= 0 ? "#15803d" : "#dc2626" }]}>{fmtCurrency(snapshot.totalProfitLoss)}</Text>
+              <Text style={[s.tdBold, { flex: 2, textAlign: "right" }]}>{fmtCurrency(snapshot.totalProfitLoss)}</Text>
             </View>
           </View>
 

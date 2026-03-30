@@ -280,7 +280,8 @@ export function NavReportPDF({ client, investors: _investors, period, snapshot }
             <Text style={s.headerTitle}>{client.name}</Text>
           </View>
           <View style={s.headerRight}>
-            <Text style={s.headerPeriod}>{`NAV Report  ·  ${period}`}</Text>
+            <Text style={s.headerPeriod}>NAV Report</Text>
+            <Text style={s.headerDate}>{fmtDate(new Date().toISOString().slice(0, 10))}</Text>
           </View>
         </View>
 
@@ -294,8 +295,8 @@ export function NavReportPDF({ client, investors: _investors, period, snapshot }
               {client.domicile ? <Text style={s.clientLine}>{client.domicile}</Text> : null}
             </View>
             <View style={s.clientDateBlock}>
-              <Text style={s.clientDateLabel}>Report Date</Text>
-              <Text style={s.clientDateValue}>{fmtDate(new Date().toISOString().slice(0, 10))}</Text>
+              <Text style={s.clientDateLabel}>NAV Period</Text>
+              <Text style={s.clientDateValue}>{period}</Text>
             </View>
           </View>
 

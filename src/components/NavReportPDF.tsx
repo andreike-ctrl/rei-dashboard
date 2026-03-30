@@ -109,13 +109,10 @@ const s = StyleSheet.create({
   sectionTitle: {
     fontSize: 8,
     fontFamily: "Helvetica-Bold",
-    color: C.blue,
+    color: C.gray400,
     letterSpacing: 1,
     textTransform: "uppercase",
     marginBottom: 8,
-    paddingBottom: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: C.blue,
   },
   grid: {
     flexDirection: "row",

@@ -142,18 +142,32 @@ const s = StyleSheet.create({
     fontFamily: "Helvetica-Bold",
     color: C.gray800,
   },
-  clientRow: {
+  clientBlock: {
     flexDirection: "row",
-    gap: 16,
-    marginBottom: 20,
+    justifyContent: "space-between",
+    marginBottom: 24,
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: C.gray200,
   },
-  clientField: {
-    flex: 1,
+  clientAddress: {
+    flexDirection: "column",
+    gap: 2,
   },
-  clientLabel: {
+  clientName: {
+    fontSize: 10,
+    fontFamily: "Helvetica-Bold",
+    color: C.gray800,
+    marginBottom: 4,
+  },
+  clientLine: {
+    fontSize: 8.5,
+    color: C.gray600,
+  },
+  clientDateBlock: {
+    alignItems: "flex-end",
+  },
+  clientDateLabel: {
     fontSize: 7,
     color: C.gray400,
     fontFamily: "Helvetica-Bold",
@@ -161,18 +175,17 @@ const s = StyleSheet.create({
     textTransform: "uppercase",
     marginBottom: 2,
   },
-  clientValue: {
-    fontSize: 9,
+  clientDateValue: {
+    fontSize: 8.5,
     color: C.gray800,
-    fontFamily: "Helvetica-Bold",
   },
   tableHead: {
     flexDirection: "row",
-    backgroundColor: C.navy,
-    borderRadius: 3,
+    borderBottomWidth: 1,
+    borderBottomColor: C.gray400,
     paddingVertical: 5,
     paddingHorizontal: 8,
-    marginBottom: 2,
+    marginBottom: 0,
   },
   tableRow: {
     flexDirection: "row",
@@ -200,7 +213,7 @@ const s = StyleSheet.create({
   thText: {
     fontSize: 7,
     fontFamily: "Helvetica-Bold",
-    color: C.white,
+    color: C.gray400,
     letterSpacing: 0.5,
     textTransform: "uppercase",
   },
@@ -235,6 +248,7 @@ export interface NavSnapshotRow {
   distributions: number;
   nav: number | null;
   moic: number | null;
+  profitLoss: number;
 }
 
 export interface NavSnapshot {
@@ -243,6 +257,7 @@ export interface NavSnapshot {
   totalDistributions: number;
   totalNav: number;
   totalMoic: number | null;
+  totalProfitLoss: number;
 }
 
 interface Props {
@@ -267,7 +282,6 @@ export function NavReportPDF({ client, investors: _investors, period, snapshot }
           <View style={s.headerLeft}>
             <Image src={logoSrc} style={s.headerLogo} />
             <Text style={s.headerTitle}>{client.name}</Text>
-            {client.domicile ? <Text style={s.headerSubtitle}>{client.domicile}</Text> : null}
           </View>
           <View style={s.headerRight}>
             <Text style={s.headerPeriod}>{`NAV Report  ·  ${period}`}</Text>
@@ -277,23 +291,16 @@ export function NavReportPDF({ client, investors: _investors, period, snapshot }
 
         <View style={s.body}>
 
-          {/* ── Client Info ── */}
-          <View style={s.clientRow}>
-            {client.email ? (
-              <View style={s.clientField}>
-                <Text style={s.clientLabel}>Email</Text>
-                <Text style={s.clientValue}>{client.email}</Text>
-              </View>
-            ) : null}
-            {client.address ? (
-              <View style={s.clientField}>
-                <Text style={s.clientLabel}>Address</Text>
-                <Text style={s.clientValue}>{client.address}</Text>
-              </View>
-            ) : null}
-            <View style={s.clientField}>
-              <Text style={s.clientLabel}>Report Date</Text>
-              <Text style={s.clientValue}>{fmtDate(new Date().toISOString().slice(0, 10))}</Text>
+          {/* ── Client Address Block ── */}
+          <View style={s.clientBlock}>
+            <View style={s.clientAddress}>
+              <Text style={s.clientName}>{client.name}</Text>
+              {client.address ? <Text style={s.clientLine}>{client.address}</Text> : null}
+              {client.domicile ? <Text style={s.clientLine}>{client.domicile}</Text> : null}
+            </View>
+            <View style={s.clientDateBlock}>
+              <Text style={s.clientDateLabel}>Report Date</Text>
+              <Text style={s.clientDateValue}>{fmtDate(new Date().toISOString().slice(0, 10))}</Text>
             </View>
           </View>
 
@@ -321,25 +328,28 @@ export function NavReportPDF({ client, investors: _investors, period, snapshot }
             <View style={s.tableHead}>
               <Text style={[s.thText, { flex: 3 }]}>Property</Text>
               <Text style={[s.thText, { flex: 2, textAlign: "right" }]}>Capital Invested</Text>
+              <Text style={[s.thText, { flex: 2, textAlign: "right" }]}>Current NAV</Text>
               <Text style={[s.thText, { flex: 2, textAlign: "right" }]}>Distributions</Text>
-              <Text style={[s.thText, { flex: 2, textAlign: "right" }]}>NAV</Text>
               <Text style={[s.thText, { flex: 1, textAlign: "right" }]}>Est. MOIC</Text>
+              <Text style={[s.thText, { flex: 2, textAlign: "right" }]}>Profit / Loss</Text>
             </View>
             {snapshot.rows.map((row, i) => (
               <View key={row.property.property_id} style={i % 2 === 0 ? s.tableRow : s.tableRowAlt}>
                 <Text style={[s.tdText, { flex: 3 }]}>{row.property.name}</Text>
                 <Text style={[s.tdText, { flex: 2, textAlign: "right" }]}>{fmtCurrency(row.capital)}</Text>
-                <Text style={[s.tdText, { flex: 2, textAlign: "right" }]}>{fmtCurrency(row.distributions)}</Text>
                 <Text style={[s.tdText, { flex: 2, textAlign: "right" }]}>{row.nav != null ? fmtCurrency(row.nav) : "—"}</Text>
+                <Text style={[s.tdText, { flex: 2, textAlign: "right" }]}>{fmtCurrency(row.distributions)}</Text>
                 <Text style={[s.tdText, { flex: 1, textAlign: "right" }]}>{fmtMultiple(row.moic)}</Text>
+                <Text style={[s.tdText, { flex: 2, textAlign: "right", color: row.profitLoss >= 0 ? "#15803d" : "#dc2626" }]}>{fmtCurrency(row.profitLoss)}</Text>
               </View>
             ))}
             <View style={s.tableFooter}>
               <Text style={[s.tdBold, { flex: 3 }]}>Total</Text>
               <Text style={[s.tdBold, { flex: 2, textAlign: "right" }]}>{fmtCurrency(snapshot.totalCapital)}</Text>
-              <Text style={[s.tdBold, { flex: 2, textAlign: "right" }]}>{fmtCurrency(snapshot.totalDistributions)}</Text>
               <Text style={[s.tdBold, { flex: 2, textAlign: "right" }]}>{fmtCurrency(snapshot.totalNav)}</Text>
+              <Text style={[s.tdBold, { flex: 2, textAlign: "right" }]}>{fmtCurrency(snapshot.totalDistributions)}</Text>
               <Text style={[s.tdBold, { flex: 1, textAlign: "right" }]}>{fmtMultiple(snapshot.totalMoic)}</Text>
+              <Text style={[s.tdBold, { flex: 2, textAlign: "right", color: snapshot.totalProfitLoss >= 0 ? "#15803d" : "#dc2626" }]}>{fmtCurrency(snapshot.totalProfitLoss)}</Text>
             </View>
           </View>
 

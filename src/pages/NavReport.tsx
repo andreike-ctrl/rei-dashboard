@@ -149,7 +149,8 @@ export function NavReport() {
         const nav = val ? units * val.nav_per_unit : null;
         const totalValue = (nav ?? 0) + distributions;
         const moic = capital > 0 ? totalValue / capital : null;
-        return { property: p, capital, distributions, nav, moic };
+        const profitLoss = totalValue - capital;
+        return { property: p, capital, distributions, nav, moic, profitLoss };
       })
       .sort((a, b) => a.property.name.localeCompare(b.property.name));
 
@@ -157,8 +158,9 @@ export function NavReport() {
     const totalDistributions = rows.reduce((s, r) => s + r.distributions, 0);
     const totalNav = rows.reduce((s, r) => s + (r.nav ?? 0), 0);
     const totalMoic = totalCapital > 0 ? (totalNav + totalDistributions) / totalCapital : null;
+    const totalProfitLoss = rows.reduce((s, r) => s + r.profitLoss, 0);
 
-    return { rows, totalCapital, totalDistributions, totalNav, totalMoic };
+    return { rows, totalCapital, totalDistributions, totalNav, totalMoic, totalProfitLoss };
   })();
 
   const pdfReady = snapshot !== null && client !== null;

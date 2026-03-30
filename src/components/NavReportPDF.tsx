@@ -271,7 +271,6 @@ interface Props {
 
 export function NavReportPDF({ client, investors: _investors, period, snapshot }: Props) {
   const logoSrc = `${window.location.origin}/vo2-logo.png`;
-  const generatedDate = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 
   return (
     <Document title={`${client.name} — NAV Report ${period}`} author="VO2 Alternatives">
@@ -331,7 +330,7 @@ export function NavReportPDF({ client, investors: _investors, period, snapshot }
               <Text style={[s.thText, { flex: 1, textAlign: "right" }]}>Est. MOIC</Text>
               <Text style={[s.thText, { flex: 2, textAlign: "right" }]}>Profit / Loss</Text>
             </View>
-            {snapshot.rows.map((row, i) => (
+            {snapshot.rows.map((row) => (
               <View key={row.property.property_id} style={s.tableRow}>
                 <Text style={[s.tdText, { flex: 3 }]}>{row.property.name}</Text>
                 <Text style={[s.tdText, { flex: 2, textAlign: "right" }]}>{fmtCurrency(row.capital)}</Text>

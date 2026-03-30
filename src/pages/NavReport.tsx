@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
+import { PDFDownloadLink } from "@react-pdf/renderer";
+import { Download } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { NavReportPDF } from "@/components/NavReportPDF";
 import { Spinner } from "@/components/ui/Spinner";
 import type { Client, Investor, Transaction, Valuation, Property } from "@/types/database";
+import type { NavSnapshot } from "@/components/NavReportPDF";
 
 function generatePeriods(): string[] {
   const periods: string[] = [];
@@ -22,15 +26,7 @@ function periodToDateRange(period: string): { start: string; end: string } {
     : { start: `${y}-07-01`, end: `${y}-12-31` };
 }
 
-function formatCurrency(v: number) {
-  return v.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-}
-
-function formatDate(d: string) {
-  return new Date(d + "T00:00:00").toLocaleDateString("en-US", {
-    month: "long", day: "numeric", year: "numeric",
-  });
-}
+const FUNDING = new Set(["Capital Call", "Funding", "Purchase"]);
 
 export function NavReport() {
   const [clients, setClients] = useState<Client[]>([]);
@@ -66,15 +62,10 @@ export function NavReport() {
 
     async function load() {
       const { data: cliData } = await supabase
-        .from("clients")
-        .select("*")
-        .eq("client_id", selectedClientId)
-        .single();
+        .from("clients").select("*").eq("client_id", selectedClientId).single();
 
       const { data: invData } = await supabase
-        .from("investors")
-        .select("*")
-        .eq("client_id", selectedClientId);
+        .from("investors").select("*").eq("client_id", selectedClientId);
 
       const typedInvestors = (invData ?? []) as Investor[];
       const investorIds = typedInvestors.map((i) => i.investor_id);
@@ -85,25 +76,18 @@ export function NavReport() {
 
       if (investorIds.length > 0) {
         const { data: txnData } = await supabase
-          .from("transactions")
-          .select("*")
+          .from("transactions").select("*")
           .in("investor_id", investorIds)
           .order("date", { ascending: true });
         typedTxns = (txnData ?? []) as Transaction[];
 
         const propIds = [...new Set(typedTxns.map((t) => t.property_id))];
         if (propIds.length > 0) {
-          const { data: propData } = await supabase
-            .from("properties")
-            .select("*")
-            .in("property_id", propIds);
+          const [{ data: propData }, { data: valData }] = await Promise.all([
+            supabase.from("properties").select("*").in("property_id", propIds),
+            supabase.from("valuations").select("*").in("property_id", propIds).order("date", { ascending: false }),
+          ]);
           typedProps = (propData ?? []) as Property[];
-
-          const { data: valData } = await supabase
-            .from("valuations")
-            .select("*")
-            .in("property_id", propIds)
-            .order("date", { ascending: false });
           typedVals = (valData ?? []) as Valuation[];
         }
       }
@@ -119,15 +103,8 @@ export function NavReport() {
     load();
   }, [selectedClientId]);
 
-  const generatedDate = new Date().toLocaleDateString("en-US", {
-    month: "long", day: "numeric", year: "numeric",
-  });
-
-  const ready = client !== null && !dataLoading;
-
-  // Compute per-property NAV snapshot for selected period
-  const snapshot = (() => {
-    if (!ready) return null;
+  const snapshot: NavSnapshot | null = (() => {
+    if (!client || dataLoading) return null;
 
     const { end } = periodToDateRange(period);
     const investorIds = new Set(investors.map((i) => i.investor_id));
@@ -141,31 +118,22 @@ export function NavReport() {
       if (!existing || v.date > existing.date) latestVal.set(v.property_id, v);
     }
 
-    // Transactions for this client up to period end
+    // Client transactions up to period end
     const clientTxns = transactions.filter(
       (t) => investorIds.has(t.investor_id) && t.date <= end
     );
 
-    // Units held per property
     const unitsByProp = new Map<number, number>();
+    const capitalByProp = new Map<number, number>();
+    const distByProp = new Map<number, number>();
+
     for (const t of clientTxns) {
       if (t.units != null) {
         unitsByProp.set(t.property_id, (unitsByProp.get(t.property_id) ?? 0) + t.units);
       }
-    }
-
-    // Capital invested per property (funding types)
-    const FUNDING = new Set(["Capital Call", "Funding", "Purchase"]);
-    const capitalByProp = new Map<number, number>();
-    for (const t of clientTxns) {
       if (FUNDING.has(t.type)) {
-        capitalByProp.set(t.property_id, (capitalByProp.get(t.property_id) ?? 0) + t.cash_amount);
+        capitalByProp.set(t.property_id, (capitalByProp.get(t.property_id) ?? 0) + Math.abs(t.cash_amount));
       }
-    }
-
-    // Distributions per property up to period end
-    const distByProp = new Map<number, number>();
-    for (const t of clientTxns) {
       if (t.type === "Distribution") {
         distByProp.set(t.property_id, (distByProp.get(t.property_id) ?? 0) + t.cash_amount);
       }
@@ -179,10 +147,9 @@ export function NavReport() {
         const capital = capitalByProp.get(p.property_id) ?? 0;
         const distributions = distByProp.get(p.property_id) ?? 0;
         const nav = val ? units * val.nav_per_unit : null;
-        const navDate = val?.date ?? null;
         const totalValue = (nav ?? 0) + distributions;
         const moic = capital > 0 ? totalValue / capital : null;
-        return { property: p, units, capital, distributions, nav, navDate, moic };
+        return { property: p, capital, distributions, nav, moic };
       })
       .sort((a, b) => a.property.name.localeCompare(b.property.name));
 
@@ -194,13 +161,19 @@ export function NavReport() {
     return { rows, totalCapital, totalDistributions, totalNav, totalMoic };
   })();
 
+  const pdfReady = snapshot !== null && client !== null;
+
+  const fileName = client
+    ? `VO2 NAV Report ${period.split(" ").reverse().join(" ")} - ${client.name}.pdf`
+    : "VO2 NAV Report.pdf";
+
   return (
     <div className="flex flex-col gap-6">
-
-      {/* Controls */}
       <div className="rounded-xl border border-border bg-background p-6">
         <h2 className="text-base font-semibold text-foreground mb-4">NAV Report Builder</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {/* Client selector */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Client
@@ -220,6 +193,8 @@ export function NavReport() {
               </select>
             )}
           </div>
+
+          {/* Period selector */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Snapshot Period
@@ -234,133 +209,43 @@ export function NavReport() {
               ))}
             </select>
           </div>
+
+          {/* Download */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground opacity-0 select-none">
+              &nbsp;
+            </label>
+            {dataLoading ? (
+              <div className="flex h-9 w-full items-center justify-center gap-2 rounded-md bg-foreground/10 text-sm font-semibold opacity-60">
+                <Spinner />
+              </div>
+            ) : pdfReady && client && snapshot ? (
+              <PDFDownloadLink
+                document={<NavReportPDF client={client} investors={investors} period={period} snapshot={snapshot} />}
+                fileName={fileName}
+              >
+                {({ loading: pdfLoading }) => (
+                  <button
+                    disabled={pdfLoading}
+                    className="flex h-9 w-full items-center justify-center gap-2 rounded-md bg-blue-700 text-white px-4 text-sm font-semibold hover:bg-blue-800 transition-colors disabled:opacity-50"
+                  >
+                    <Download className="h-4 w-4" />
+                    {pdfLoading ? "Preparing…" : "Download PDF"}
+                  </button>
+                )}
+              </PDFDownloadLink>
+            ) : (
+              <button
+                disabled
+                className="flex h-9 w-full items-center justify-center gap-2 rounded-md bg-foreground text-background px-4 text-sm font-semibold opacity-30"
+              >
+                <Download className="h-4 w-4" />
+                Download PDF
+              </button>
+            )}
+          </div>
         </div>
       </div>
-
-      {/* Report Preview */}
-      {dataLoading && (
-        <div className="flex justify-center py-12">
-          <Spinner />
-        </div>
-      )}
-
-      {ready && snapshot && (
-        <div className="rounded-xl border border-border bg-background overflow-hidden">
-
-          {/* VO2 Header */}
-          <div className="flex items-start justify-between bg-slate-900 px-8 py-6">
-            <div className="flex flex-col gap-1">
-              <img src="/vo2-logo.png" alt="VO2 Alternatives" className="h-7 w-auto object-contain brightness-0 invert mb-2" />
-              <p className="text-white/60 text-xs uppercase tracking-widest">NAV Report</p>
-            </div>
-            <div className="text-right">
-              <p className="text-white font-semibold text-lg">{period}</p>
-              <p className="text-white/50 text-xs mt-0.5">Prepared {generatedDate}</p>
-            </div>
-          </div>
-
-          {/* Client Info */}
-          <div className="border-b border-border px-8 py-5 bg-muted/30">
-            <div className="grid grid-cols-2 gap-x-8 gap-y-2 sm:grid-cols-4">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Client</p>
-                <p className="text-sm font-semibold text-foreground mt-0.5">{client.name}</p>
-              </div>
-              {client.domicile && (
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Domicile</p>
-                  <p className="text-sm font-medium text-foreground mt-0.5">{client.domicile}</p>
-                </div>
-              )}
-              {client.email && (
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Email</p>
-                  <p className="text-sm font-medium text-foreground mt-0.5">{client.email}</p>
-                </div>
-              )}
-              <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Report Date</p>
-                <p className="text-sm font-medium text-foreground mt-0.5">{generatedDate}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Portfolio Summary */}
-          <div className="px-8 py-6 border-b border-border">
-            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide mb-4">Portfolio Summary</h3>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              {[
-                { label: "Total Invested", value: formatCurrency(snapshot.totalCapital) },
-                { label: "Total Distributions", value: formatCurrency(snapshot.totalDistributions) },
-                { label: "Current NAV", value: formatCurrency(snapshot.totalNav) },
-                { label: "Est. MOIC", value: snapshot.totalMoic != null ? snapshot.totalMoic.toFixed(2) + "x" : "—" },
-              ].map((item) => (
-                <div key={item.label} className="rounded-lg border border-border bg-background px-4 py-3">
-                  <p className="text-xs text-muted-foreground">{item.label}</p>
-                  <p className="text-lg font-semibold text-foreground mt-0.5">{item.value}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Holdings Table */}
-          <div className="px-8 py-6">
-            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide mb-4">Holdings</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="pb-3 pr-4 text-left font-medium text-muted-foreground">Property</th>
-                    <th className="pb-3 pr-4 text-right font-medium text-muted-foreground">Capital Invested</th>
-                    <th className="pb-3 pr-4 text-right font-medium text-muted-foreground">Distributions</th>
-                    <th className="pb-3 pr-4 text-right font-medium text-muted-foreground">NAV</th>
-                    <th className="pb-3 pr-4 text-right font-medium text-muted-foreground">NAV Date</th>
-                    <th className="pb-3 text-right font-medium text-muted-foreground">Est. MOIC</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {snapshot.rows.map((row) => (
-                    <tr key={row.property.property_id} className="border-b border-border/50 last:border-0">
-                      <td className="py-3 pr-4 font-medium text-foreground">{row.property.name}</td>
-                      <td className="py-3 pr-4 text-right tabular-nums text-foreground">{formatCurrency(row.capital)}</td>
-                      <td className="py-3 pr-4 text-right tabular-nums text-foreground">{formatCurrency(row.distributions)}</td>
-                      <td className="py-3 pr-4 text-right tabular-nums text-foreground">
-                        {row.nav != null ? formatCurrency(row.nav) : "—"}
-                      </td>
-                      <td className="py-3 pr-4 text-right tabular-nums text-muted-foreground text-xs">
-                        {row.navDate ? formatDate(row.navDate) : "—"}
-                      </td>
-                      <td className="py-3 text-right tabular-nums font-medium text-foreground">
-                        {row.moic != null ? row.moic.toFixed(2) + "x" : "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="border-t-2 border-border">
-                    <td className="pt-3 pr-4 font-semibold text-foreground">Total</td>
-                    <td className="pt-3 pr-4 text-right font-semibold tabular-nums text-foreground">{formatCurrency(snapshot.totalCapital)}</td>
-                    <td className="pt-3 pr-4 text-right font-semibold tabular-nums text-foreground">{formatCurrency(snapshot.totalDistributions)}</td>
-                    <td className="pt-3 pr-4 text-right font-semibold tabular-nums text-foreground">{formatCurrency(snapshot.totalNav)}</td>
-                    <td className="pt-3 pr-4" />
-                    <td className="pt-3 text-right font-semibold tabular-nums text-foreground">
-                      {snapshot.totalMoic != null ? snapshot.totalMoic.toFixed(2) + "x" : "—"}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </div>
-
-        </div>
-      )}
-
-      {!dataLoading && selectedClientId && !ready && (
-        <div className="rounded-xl border border-border bg-background py-12 text-center text-sm text-muted-foreground">
-          No data found for this client.
-        </div>
-      )}
-
     </div>
   );
 }

@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { Building2, Users, ClipboardEdit, FileText, LogOut, Menu, X } from "lucide-react";
+import { Building2, Users, ClipboardEdit, FileText, LogOut, Menu, X, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/AuthProvider";
 
@@ -8,16 +8,35 @@ const navItems = [
   { to: "/", label: "Properties", icon: Building2 },
   { to: "/clients", label: "Clients", icon: Users },
   { to: "/data-input", label: "Data Input", icon: ClipboardEdit },
-  { to: "/report", label: "Report", icon: FileText },
+];
+
+const reportItems = [
+  { to: "/report", label: "Property Report" },
+  { to: "/nav-report", label: "NAV Report" },
 ];
 
 export function Layout() {
   const location = useLocation();
   const { signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const reportRef = useRef<HTMLDivElement>(null);
 
   const isActive = (to: string) =>
     to === "/" ? location.pathname === "/" : location.pathname.startsWith(to);
+
+  const reportActive = reportItems.some((r) => location.pathname.startsWith(r.to));
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (reportRef.current && !reportRef.current.contains(e.target as Node)) {
+        setReportOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   return (
     <div className="min-h-screen bg-muted/40">
@@ -50,6 +69,42 @@ export function Layout() {
                 {item.label}
               </Link>
             ))}
+
+            {/* Reports dropdown */}
+            <div className="relative" ref={reportRef}>
+              <button
+                onClick={() => setReportOpen((o) => !o)}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                  reportActive
+                    ? "bg-secondary text-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                )}
+              >
+                <FileText className="h-4 w-4" />
+                Reports
+                <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", reportOpen && "rotate-180")} />
+              </button>
+              {reportOpen && (
+                <div className="absolute right-0 top-full mt-1 w-44 rounded-md border border-border bg-background shadow-md py-1 z-50">
+                  {reportItems.map((item) => (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      onClick={() => setReportOpen(false)}
+                      className={cn(
+                        "block px-4 py-2 text-sm transition-colors",
+                        location.pathname.startsWith(item.to)
+                          ? "bg-secondary text-foreground font-medium"
+                          : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                      )}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           </nav>
 
           {/* Desktop sign out */}
@@ -88,6 +143,21 @@ export function Layout() {
                 )}
               >
                 <item.icon className="h-4 w-4" />
+                {item.label}
+              </Link>
+            ))}
+            {reportItems.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                onClick={() => setMobileOpen(false)}
+                className={cn(
+                  "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors pl-9",
+                  location.pathname.startsWith(item.to)
+                    ? "bg-secondary text-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                )}
+              >
                 {item.label}
               </Link>
             ))}

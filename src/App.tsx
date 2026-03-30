@@ -10,6 +10,7 @@ import { Clients } from "@/pages/Clients";
 import { ClientDetail } from "@/pages/ClientDetail";
 import { DataInput } from "@/pages/DataInput";
 import { Report } from "@/pages/Report";
+import { NavReport } from "@/pages/NavReport";
 import { NotFound } from "@/pages/NotFound";
 
 export default function App() {
@@ -29,6 +30,7 @@ export default function App() {
               <Route path="/clients/:id" element={<ClientDetail />} />
               <Route path="/data-input" element={<DataInput />} />
               <Route path="/report" element={<Report />} />
+              <Route path="/nav-report" element={<NavReport />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Route>

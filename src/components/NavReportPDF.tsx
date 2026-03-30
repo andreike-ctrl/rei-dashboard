@@ -348,6 +348,13 @@ export function NavReportPDF({ client, investors: _investors, period, snapshot }
             </View>
           </View>
 
+          {/* ── Disclaimer ── */}
+          <View style={{ marginTop: 24, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.gray200 }}>
+            <Text style={{ fontSize: 7, color: C.gray400, lineHeight: 1.6 }}>
+              {"DISCLAIMER — The Net Asset Value (NAV) figures presented in this report represent management's internal estimates of fair value based on available information as of the stated NAV period. These valuations have not been independently appraised or verified by a third-party valuation firm and are subject to change. Past performance is not indicative of future results. This document is confidential and intended solely for the named recipient."}
+            </Text>
+          </View>
+
         </View>
 
         {/* ── Footer ── */}

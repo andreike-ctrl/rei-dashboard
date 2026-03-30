@@ -169,6 +169,9 @@ export function NavReport() {
       {/* ── Controls ── */}
       <div className="rounded-xl border border-border bg-background p-6">
         <h2 className="text-base font-semibold text-foreground mb-4">NAV Report Builder</h2>
+        <p className="mb-4 text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">Note:</span> This report reflects current NAV and distributions as recorded in the system. Selecting a prior period does not produce a retroactive snapshot, it only adjusts the period text that is printed in the PDF.
+        </p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Client</label>

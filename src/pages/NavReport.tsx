@@ -18,13 +18,6 @@ function generatePeriods(): string[] {
 
 const PERIODS = generatePeriods();
 
-function periodToDateRange(period: string): { start: string; end: string } {
-  const [half, year] = period.split(" ");
-  const y = parseInt(year);
-  return half === "H1"
-    ? { start: `${y}-01-01`, end: `${y}-06-30` }
-    : { start: `${y}-07-01`, end: `${y}-12-31` };
-}
 
 function formatCurrency(v: number) {
   return v.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
@@ -94,21 +87,21 @@ export function NavReport() {
   // Reset overrides when period changes
   useEffect(() => { setNavOverrides(new Map()); }, [period]);
 
-  // Base per-property data (units, capital, distributions, base NAV)
+  // Base per-property data — latest NAV and all distributions life-to-date (period only affects PDF label)
   const baseRows = useMemo(() => {
     if (!client || dataLoading || properties.length === 0) return [];
-    const { end } = periodToDateRange(period);
     const investorIds = new Set(investors.map((i) => i.investor_id));
     const propMap = new Map(properties.map((p) => [p.property_id, p]));
 
+    // Latest valuation per property (no date cutoff)
     const latestVal = new Map<number, Valuation>();
     for (const v of valuations) {
-      if (v.date > end) continue;
       const existing = latestVal.get(v.property_id);
       if (!existing || v.date > existing.date) latestVal.set(v.property_id, v);
     }
 
-    const clientTxns = transactions.filter((t) => investorIds.has(t.investor_id) && t.date <= end);
+    // All client transactions life-to-date
+    const clientTxns = transactions.filter((t) => investorIds.has(t.investor_id));
     const unitsByProp = new Map<number, number>();
     const capitalByProp = new Map<number, number>();
     const distByProp = new Map<number, number>();
@@ -133,7 +126,7 @@ export function NavReport() {
         };
       })
       .sort((a, b) => a.property.name.localeCompare(b.property.name));
-  }, [client, dataLoading, properties, valuations, transactions, investors, period]);
+  }, [client, dataLoading, properties, valuations, transactions, investors]);
 
   // Snapshot using overrides
   const snapshot: NavSnapshot | null = useMemo(() => {

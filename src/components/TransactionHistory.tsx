@@ -45,9 +45,13 @@ export function TransactionHistory({
   const showClient = investors != null && clients != null;
   const [showAll, setShowAll] = useState(false);
   const [selectedTypes, setSelectedTypes] = useState<Set<string>>(new Set());
+  const [selectedPropertyId, setSelectedPropertyId] = useState<number | null>(null);
+  const [selectedClientName, setSelectedClientName] = useState<string | null>(null);
   const INITIAL_LIMIT = 25;
 
-  const { rows, propertyMap, clientByInvestor, allTypes } = useMemo(() => {
+  const multipleProperties = properties.length > 1;
+
+  const { rows, propertyMap, clientByInvestor, allTypes, allClientNames } = useMemo(() => {
     const propMap = new Map(properties.map((p) => [p.property_id, p]));
 
     // Build investor_id → client name lookup
@@ -60,19 +64,23 @@ export function TransactionHistory({
       }
     }
 
-    const sorted = [...transactions].sort((a, b) =>
-      b.date.localeCompare(a.date)
-    );
-
+    const sorted = [...transactions].sort((a, b) => b.date.localeCompare(a.date));
     const types = [...new Set(transactions.map((t) => t.type))].sort();
+    const clientNames = [...new Set(
+      transactions.map((t) => invToClient.get(t.investor_id)).filter(Boolean) as string[]
+    )].sort();
 
-    return { rows: sorted, propertyMap: propMap, clientByInvestor: invToClient, allTypes: types };
+    return { rows: sorted, propertyMap: propMap, clientByInvestor: invToClient, allTypes: types, allClientNames: clientNames };
   }, [transactions, properties, investors, clients]);
 
   const filtered = useMemo(() => {
-    if (selectedTypes.size === 0) return rows;
-    return rows.filter((t) => selectedTypes.has(t.type));
-  }, [rows, selectedTypes]);
+    return rows.filter((t) => {
+      if (selectedTypes.size > 0 && !selectedTypes.has(t.type)) return false;
+      if (multipleProperties && selectedPropertyId != null && t.property_id !== selectedPropertyId) return false;
+      if (!multipleProperties && selectedClientName != null && clientByInvestor.get(t.investor_id) !== selectedClientName) return false;
+      return true;
+    });
+  }, [rows, selectedTypes, selectedPropertyId, selectedClientName, multipleProperties, clientByInvestor]);
 
   function toggleType(type: string) {
     setSelectedTypes((prev) => {
@@ -83,6 +91,15 @@ export function TransactionHistory({
     });
     setShowAll(false);
   }
+
+  function clearAllFilters() {
+    setSelectedTypes(new Set());
+    setSelectedPropertyId(null);
+    setSelectedClientName(null);
+    setShowAll(false);
+  }
+
+  const hasActiveFilters = selectedTypes.size > 0 || selectedPropertyId != null || selectedClientName != null;
 
   if (rows.length === 0) {
     const empty = (
@@ -104,8 +121,8 @@ export function TransactionHistory({
 
   const inner = (
     <>
-      {/* Type filter chips */}
-        <div className="mb-4 flex flex-wrap gap-2">
+      {/* Filters */}
+        <div className="mb-4 flex flex-wrap items-center gap-2">
           {allTypes.map((type) => {
             const active = selectedTypes.has(type);
             return (
@@ -122,12 +139,38 @@ export function TransactionHistory({
               </button>
             );
           })}
-          {selectedTypes.size > 0 && (
+
+          {/* Property filter (client page) */}
+          {multipleProperties && (
+            <select
+              value={selectedPropertyId ?? ""}
+              onChange={(e) => { setSelectedPropertyId(e.target.value ? parseInt(e.target.value) : null); setShowAll(false); }}
+              className="h-7 rounded-full border border-border bg-background px-3 text-xs text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            >
+              <option value="">All Properties</option>
+              {properties.sort((a, b) => a.name.localeCompare(b.name)).map((p) => (
+                <option key={p.property_id} value={p.property_id}>{p.name}</option>
+              ))}
+            </select>
+          )}
+
+          {/* Client filter (property page) */}
+          {!multipleProperties && allClientNames.length > 1 && (
+            <select
+              value={selectedClientName ?? ""}
+              onChange={(e) => { setSelectedClientName(e.target.value || null); setShowAll(false); }}
+              className="h-7 rounded-full border border-border bg-background px-3 text-xs text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            >
+              <option value="">All Clients</option>
+              {allClientNames.map((name) => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
+          )}
+
+          {hasActiveFilters && (
             <button
-              onClick={() => {
-                setSelectedTypes(new Set());
-                setShowAll(false);
-              }}
+              onClick={clearAllFilters}
               className="rounded-full px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               Clear filters

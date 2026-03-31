@@ -383,18 +383,22 @@ export function Dashboard() {
       />
 
       {/* Property list */}
-      <h2 className="text-base font-semibold text-foreground">All Properties</h2>
-      {filtered.length === 0 ? (
-        <p className="py-12 text-center text-sm text-muted-foreground">
-          No properties match your filters.
-        </p>
-      ) : (
-        <div className="border border-border divide-y divide-border">
-          {filtered.map((p) => (
-            <PropertyCard key={p.property_id} property={p} />
-          ))}
+      <div className="border border-border bg-card">
+        <div className="px-6 py-4 border-b border-border">
+          <h2 className="text-base font-semibold text-foreground">All Properties</h2>
         </div>
-      )}
+        {filtered.length === 0 ? (
+          <p className="py-12 text-center text-sm text-muted-foreground">
+            No properties match your filters.
+          </p>
+        ) : (
+          <div className="divide-y divide-border">
+            {filtered.map((p) => (
+              <PropertyCard key={p.property_id} property={p} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

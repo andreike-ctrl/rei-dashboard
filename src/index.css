@@ -17,15 +17,24 @@
   --color-border: #e2e8f0;
   --color-ring: #1e40af;
 
+  --radius-3xl: 0px;
+  --radius-2xl: 0px;
+  --radius-xl: 0px;
   --radius-lg: 0px;
   --radius-md: 0px;
   --radius-sm: 0px;
+  --radius: 0px;
 
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
 * {
   border-color: var(--color-border);
+  border-radius: 0 !important;
+}
+
+.rounded-full {
+  border-radius: 9999px !important;
 }
 
 tr[data-clickable] td {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Download } from "lucide-react";
+import { downloadCsv } from "@/lib/csv";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { PropertyHeader } from "@/components/PropertyHeader";
@@ -187,6 +188,65 @@ export function PropertyDetail() {
 
   const allMetrics = [...metrics, ...derivedMetrics];
 
+  // Cap table CSV
+  const UNIT_TYPES = new Set(["Capital Call", "Funding", "Purchase", "Sale", "Shares Awarded", "Distribution"]);
+  const clientMap = new Map(clients.map((c) => [c.client_id, c]));
+  const investorMap = new Map(investors.map((i) => [i.investor_id, i]));
+  const unitsByInvestor = new Map<number, number>();
+  for (const txn of transactions) {
+    if (!UNIT_TYPES.has(txn.type) || txn.units == null) continue;
+    unitsByInvestor.set(txn.investor_id, (unitsByInvestor.get(txn.investor_id) ?? 0) + txn.units);
+  }
+  const totalCapTableUnits = Array.from(unitsByInvestor.values()).reduce((a, b) => a + b, 0);
+
+  function handleCapTableDownload() {
+    const rows = Array.from(unitsByInvestor.entries())
+      .filter(([, units]) => units !== 0)
+      .map(([investorId, units]) => {
+        const investor = investorMap.get(investorId);
+        const client = investor ? clientMap.get(investor.client_id) : undefined;
+        return [
+          investor?.name ?? `Investor #${investorId}`,
+          client?.name ?? "—",
+          investor?.investor_type ?? "—",
+          units,
+          totalCapTableUnits > 0 ? ((units / totalCapTableUnits) * 100).toFixed(1) + "%" : "0.0%",
+        ];
+      })
+      .sort((a, b) => (Number(b[3]) - Number(a[3])));
+    downloadCsv("cap-table.csv", ["Investor", "Client", "Type", "Units", "Ownership %"], rows);
+  }
+
+  function handleTxnDownload() {
+    downloadCsv(
+      "transaction-history.csv",
+      ["Date", "Type", "Client", "Amount", "Units", "Notes"],
+      [...transactions]
+        .sort((a, b) => b.date.localeCompare(a.date))
+        .map((t) => {
+          const inv = investorMap.get(t.investor_id);
+          const client = inv ? clientMap.get(inv.client_id) : undefined;
+          return [
+            t.date,
+            t.type,
+            client?.name ?? inv?.name ?? `Investor #${t.investor_id}`,
+            t.cash_amount,
+            t.units ?? "",
+            t.notes ?? "",
+          ];
+        })
+    );
+  }
+
+  const csvButton = (onClick: () => void) => (
+    <button
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-secondary/60 transition-colors"
+    >
+      <Download className="h-3.5 w-3.5" /> CSV
+    </button>
+  );
+
   return (
     <div className="space-y-6">
       <PropertyHeader property={property} />
@@ -196,7 +256,7 @@ export function PropertyDetail() {
         transactions={transactions}
         valuations={valuations}
       />
-      <ExpandableSection title="Cap Table" defaultOpen={false}>
+      <ExpandableSection title="Cap Table" defaultOpen={false} downloadButton={csvButton(handleCapTableDownload)}>
         <CapTable
           transactions={transactions}
           investors={investors}
@@ -295,7 +355,7 @@ export function PropertyDetail() {
         </div>
       </ExpandableSection>
       <DividendsChart transactions={transactions} vo2Raise={property.vo2_raise ?? null} />
-      <ExpandableSection title="Transaction History" defaultOpen={false}>
+      <ExpandableSection title="Transaction History" defaultOpen={false} downloadButton={csvButton(handleTxnDownload)}>
         <TransactionHistory
           transactions={transactions}
           properties={property ? [property] : []}
@@ -312,23 +372,28 @@ function ExpandableSection({
   title,
   children,
   defaultOpen = true,
+  downloadButton,
 }: {
   title: string;
   children: React.ReactNode;
   defaultOpen?: boolean;
+  downloadButton?: React.ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="border border-border bg-card">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between px-6 py-4 text-left"
-      >
-        <span className="text-base font-semibold text-foreground">{title}</span>
-        <ChevronDown
-          className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-        />
-      </button>
+      <div className="flex w-full items-center justify-between px-6 py-4">
+        <button
+          onClick={() => setOpen((o) => !o)}
+          className="flex flex-1 items-center gap-2 text-left"
+        >
+          <span className="text-base font-semibold text-foreground">{title}</span>
+          <ChevronDown
+            className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          />
+        </button>
+        {downloadButton}
+      </div>
       {open && <div className="px-6 pb-6">{children}</div>}
     </div>
   );

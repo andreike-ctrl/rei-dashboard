@@ -160,7 +160,7 @@ export function NavReport() {
   return (
     <div className="flex flex-col gap-6">
       {/* ── Controls ── */}
-      <div className="rounded-xl border border-border bg-background p-6">
+      <div className="border border-border bg-background p-6">
         <h2 className="text-base font-semibold text-foreground mb-4">NAV Report Builder</h2>
         <p className="mb-4 text-xs text-muted-foreground">
           <span className="font-medium text-foreground">Note:</span> This report reflects current NAV and distributions as recorded in the system. Selecting a prior period does not produce a retroactive snapshot, it only adjusts the period text that is printed in the PDF.
@@ -219,7 +219,7 @@ export function NavReport() {
 
       {/* ── NAV Adjustments table ── */}
       {!dataLoading && baseRows.length > 0 && (
-        <div className="rounded-xl border border-border bg-background p-6">
+        <div className="border border-border bg-background p-6">
           <h3 className="text-sm font-semibold text-foreground mb-4">NAV Adjustments</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -280,7 +280,7 @@ export function NavReport() {
       )}
 
       {/* ── Preview pane ── */}
-      <div className="rounded-xl border border-border overflow-hidden">
+      <div className="border border-border overflow-hidden">
         {!selectedClientId ? (
           <div className="flex h-[700px] items-center justify-center bg-muted/20">
             <p className="text-sm text-muted-foreground">Select a client to preview the report.</p>

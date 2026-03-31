@@ -388,7 +388,7 @@ export function Dashboard() {
           No properties match your filters.
         </p>
       ) : (
-        <div className="grid gap-4">
+        <div className="border border-border divide-y divide-border">
           {filtered.map((p) => (
             <PropertyCard key={p.property_id} property={p} />
           ))}

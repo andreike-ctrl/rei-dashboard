@@ -18,7 +18,7 @@ export function PortfolioMap({ locations }: PortfolioMapProps) {
     if (buildings.length === 0) return { center: { lat: 39, lon: -98 }, zoom: 3 };
 
     if (buildings.length === 1) {
-      return { center: { lat: buildings[0].lat, lon: buildings[0].lon }, zoom: 10 };
+      return { center: { lat: buildings[0].lat, lon: buildings[0].lon }, zoom: 8 };
     }
 
     let minLat = Infinity, maxLat = -Infinity, minLon = Infinity, maxLon = -Infinity;
@@ -31,13 +31,13 @@ export function PortfolioMap({ locations }: PortfolioMapProps) {
 
     const span = Math.max(maxLat - minLat, maxLon - minLon);
     let z = 4;
-    if (span > 20) z = 3;
-    else if (span > 10) z = 4;
-    else if (span > 5) z = 5;
-    else if (span > 2) z = 6;
-    else if (span > 0.5) z = 8;
-    else if (span > 0.1) z = 11;
-    else z = 13;
+    if (span > 20) z = 2;
+    else if (span > 10) z = 3;
+    else if (span > 5) z = 4;
+    else if (span > 2) z = 5;
+    else if (span > 0.5) z = 6;
+    else if (span > 0.1) z = 9;
+    else z = 11;
 
     return {
       center: { lat: (minLat + maxLat) / 2, lon: (minLon + maxLon) / 2 },

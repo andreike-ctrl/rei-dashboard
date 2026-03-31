@@ -10,7 +10,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { formatCurrency, formatQuarter, formatMultiple } from "@/lib/format";
 import { DividendsChart } from "@/components/DividendsChart";
-import type { Valuation, Transaction } from "@/types/database";
+import { PortfolioMap } from "@/components/PortfolioMap";
+import type { Valuation, Transaction, PropertyLocation } from "@/types/database";
 
 interface PortfolioSummaryProps {
   /** All valuations for the currently-filtered properties */
@@ -29,6 +30,8 @@ interface PortfolioSummaryProps {
   totalOtherProceeds: number;
   /** Current MOIC = (NAV + Dividends + Other Proceeds) / Raised */
   currentMoic: number | null;
+  /** Property locations for the portfolio map */
+  locations: PropertyLocation[];
 }
 
 interface ChartDataPoint {
@@ -85,6 +88,7 @@ function formatYAxisTick(value: number): string {
 export function PortfolioSummary({
   valuations,
   transactions,
+  locations,
   totalNav,
   propertyCount,
   totalRaised,
@@ -158,8 +162,8 @@ export function PortfolioSummary({
         </CardContent>
       </Card>
 
-      {/* Chart spanning full width */}
-      <div className="sm:col-span-3 lg:col-span-6">
+      {/* NAV chart (4 cols) + Portfolio map (2 cols) */}
+      <div className="sm:col-span-3 lg:col-span-4">
         <Card>
           <CardHeader>
             <CardTitle>Portfolio NAV Over Time</CardTitle>
@@ -241,6 +245,9 @@ export function PortfolioSummary({
             )}
           </CardContent>
         </Card>
+      </div>
+      <div className="sm:col-span-3 lg:col-span-2">
+        <PortfolioMap locations={locations} />
       </div>
 
       {/* Dividends chart spanning full width */}

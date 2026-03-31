@@ -6,7 +6,7 @@ import { PortfolioSummary } from "@/components/PortfolioSummary";
 import { Spinner } from "@/components/ui/Spinner";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { downloadCsv } from "@/lib/csv";
-import type { Property, PropertyWithNav, Valuation, Transaction } from "@/types/database";
+import type { Property, PropertyWithNav, Valuation, Transaction, PropertyLocation } from "@/types/database";
 
 /** Transaction types that represent funding / capital raised */
 const FUNDING_TYPES = new Set(["Capital Call", "Funding", "Purchase"]);
@@ -16,6 +16,7 @@ export function Dashboard() {
   const [properties, setProperties] = useState<PropertyWithNav[]>([]);
   const [allValuations, setAllValuations] = useState<Valuation[]>([]);
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
+  const [allLocations, setAllLocations] = useState<PropertyLocation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -62,6 +63,9 @@ export function Dashboard() {
         setLoading(false);
         return;
       }
+
+      const { data: locs } = await supabase.from("property_locations").select("*");
+      setAllLocations((locs ?? []) as PropertyLocation[]);
 
       const typedVals = vals as Valuation[];
       setAllValuations(typedVals);
@@ -174,6 +178,11 @@ export function Dashboard() {
   const totalNav = useMemo(
     () => filtered.reduce((sum, p) => sum + (p.latest_nav ?? 0), 0),
     [filtered]
+  );
+
+  const filteredLocations = useMemo(
+    () => allLocations.filter((l) => filteredPropertyIds.has(l.property_id)),
+    [allLocations, filteredPropertyIds]
   );
 
   // Filter transactions to only those belonging to filtered properties
@@ -374,6 +383,7 @@ export function Dashboard() {
       <PortfolioSummary
         valuations={filteredValuations}
         transactions={filteredTransactions}
+        locations={filteredLocations}
         totalNav={totalNav}
         propertyCount={filtered.length}
         totalRaised={totalRaised}

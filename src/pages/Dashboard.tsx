@@ -383,6 +383,7 @@ export function Dashboard() {
       />
 
       {/* Property list */}
+      <h2 className="text-base font-semibold text-foreground">All Properties</h2>
       {filtered.length === 0 ? (
         <p className="py-12 text-center text-sm text-muted-foreground">
           No properties match your filters.

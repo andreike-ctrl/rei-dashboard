@@ -65,13 +65,15 @@ export function ClientForm({ clients, onSaved }: ClientFormProps) {
       const { data, error: err } = await supabase
         .from("clients")
         .insert(payload)
-        .select()
-        .single();
+        .select();
       if (err) {
         setError(err.message);
       } else {
-        onSaved(data as Client);
-        setSelectedId((data as Client).client_id);
+        const saved = (data as Client[])?.[0];
+        if (saved) {
+          onSaved(saved);
+          setSelectedId(saved.client_id);
+        }
         setSuccess(true);
       }
     } else {
@@ -79,12 +81,12 @@ export function ClientForm({ clients, onSaved }: ClientFormProps) {
         .from("clients")
         .update(payload)
         .eq("client_id", selectedId)
-        .select()
-        .single();
+        .select();
       if (err) {
         setError(err.message);
       } else {
-        onSaved(data as Client);
+        const saved = (data as Client[])?.[0];
+        if (saved) onSaved(saved);
         setSuccess(true);
       }
     }

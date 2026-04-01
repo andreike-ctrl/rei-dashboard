@@ -43,6 +43,9 @@ export function DataInput() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Tab state
+  const [activeTab, setActiveTab] = useState("distribution");
+
   // Form state
   const [selectedPropertyId, setSelectedPropertyId] = useState<number | null>(
     null
@@ -247,206 +250,222 @@ export function DataInput() {
   if (error && phase === "configure")
     return <ErrorMessage message={error} />;
 
+  const TABS = [
+    { id: "distribution", label: "Bulk Distribution" },
+    { id: "transaction", label: "Transaction" },
+    { id: "nav", label: "NAV Update" },
+    { id: "metrics", label: "Metrics" },
+    { id: "locations", label: "Locations" },
+    { id: "property", label: "Property" },
+    { id: "client", label: "Client" },
+  ] as const;
+
+  type Tab = (typeof TABS)[number]["id"];
+
   return (
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-foreground">Data Input</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Create and submit bulk transactions to the database
+          Create and submit transactions, update valuations, and manage records
         </p>
       </div>
 
-      <div className="mb-4">
-        <h2 className="text-lg font-semibold text-foreground">
-          Bulk Distribution
-        </h2>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          Allocate distributions across investors pro-rata by cap table ownership
-        </p>
+      {/* Tab bar */}
+      <div className="mb-6 flex border-b border-border overflow-x-auto">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`shrink-0 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+              activeTab === tab.id
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      {/* Step indicator */}
-      <div className="mb-6 flex items-center gap-2 text-sm">
-        {(["configure", "review", "submitted"] as Phase[]).map(
-          (step, i, arr) => {
-            const labels = ["Configure", "Review & Edit", "Complete"];
-            const isCurrent = step === phase;
-            const isPast =
-              arr.indexOf(phase) > i;
-            return (
-              <div key={step} className="flex items-center gap-2">
-                {i > 0 && (
-                  <div
-                    className={`h-px w-8 ${
-                      isPast ? "bg-primary" : "bg-border"
-                    }`}
-                  />
-                )}
-                <span
-                  className={`rounded-full px-3 py-1 font-medium ${
-                    isCurrent
-                      ? "bg-primary text-primary-foreground"
-                      : isPast
-                        ? "bg-primary/10 text-primary"
-                        : "bg-secondary text-muted-foreground"
-                  }`}
-                >
-                  {labels[i]}
-                </span>
-              </div>
-            );
-          }
-        )}
-      </div>
-
-      {phase === "configure" && (
-        <DividendConfigForm
-          properties={properties}
-          selectedPropertyId={selectedPropertyId}
-          onPropertyChange={setSelectedPropertyId}
-          totalAmount={totalAmount}
-          onTotalAmountChange={setTotalAmount}
-          dividendDate={dividendDate}
-          onDateChange={setDividendDate}
-          notes={notes}
-          onNotesChange={setNotes}
-          onCalculate={calculateDistribution}
-          isValid={isValid}
-        />
-      )}
-
-      {phase === "review" && (
+      {/* Bulk Distribution */}
+      {activeTab === "distribution" && (
         <>
-          <DividendReviewTable
-            rows={distributionRows}
-            onUpdateRow={handleUpdateRow}
-            totalAmount={parseFloat(totalAmount)}
-            dividendDate={dividendDate}
-            propertyName={selectedProperty?.name ?? ""}
-            notes={notes}
-            onBack={() => setPhase("configure")}
-            onSubmit={handleSubmit}
-            submitting={submitting}
-          />
-          {submitError && (
-            <div className="mt-3 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-              Failed to submit: {submitError}
-            </div>
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-foreground">Bulk Distribution</h2>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              Allocate distributions across investors pro-rata by cap table ownership
+            </p>
+          </div>
+
+          <div className="mb-6 flex items-center gap-2 text-sm">
+            {(["configure", "review", "submitted"] as Phase[]).map((step, i, arr) => {
+              const labels = ["Configure", "Review & Edit", "Complete"];
+              const isCurrent = step === phase;
+              const isPast = arr.indexOf(phase) > i;
+              return (
+                <div key={step} className="flex items-center gap-2">
+                  {i > 0 && <div className={`h-px w-8 ${isPast ? "bg-primary" : "bg-border"}`} />}
+                  <span className={`rounded-full px-3 py-1 font-medium ${isCurrent ? "bg-primary text-primary-foreground" : isPast ? "bg-primary/10 text-primary" : "bg-secondary text-muted-foreground"}`}>
+                    {labels[i]}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          {phase === "configure" && (
+            <DividendConfigForm
+              properties={properties}
+              selectedPropertyId={selectedPropertyId}
+              onPropertyChange={setSelectedPropertyId}
+              totalAmount={totalAmount}
+              onTotalAmountChange={setTotalAmount}
+              dividendDate={dividendDate}
+              onDateChange={setDividendDate}
+              notes={notes}
+              onNotesChange={setNotes}
+              onCalculate={calculateDistribution}
+              isValid={isValid}
+            />
+          )}
+
+          {phase === "review" && (
+            <>
+              <DividendReviewTable
+                rows={distributionRows}
+                onUpdateRow={handleUpdateRow}
+                totalAmount={parseFloat(totalAmount)}
+                dividendDate={dividendDate}
+                propertyName={selectedProperty?.name ?? ""}
+                notes={notes}
+                onBack={() => setPhase("configure")}
+                onSubmit={handleSubmit}
+                submitting={submitting}
+              />
+              {submitError && (
+                <div className="mt-3 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                  Failed to submit: {submitError}
+                </div>
+              )}
+            </>
+          )}
+
+          {phase === "submitted" && (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-600" />
+                <h3 className="mt-4 text-lg font-semibold text-foreground">
+                  Distributions Submitted Successfully
+                </h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Inserted {submitCount} distribution transactions totaling{" "}
+                  {formatCurrencyDetailed(distributionRows.reduce((s, r) => s + r.cashAmount, 0))}{" "}
+                  for {selectedProperty?.name}.
+                </p>
+                <button
+                  onClick={handleReset}
+                  style={{ paddingLeft: "2.5rem", paddingRight: "2.5rem" }}
+                  className="mt-6 h-10 rounded-md bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
+                  Enter Another Distribution
+                </button>
+              </CardContent>
+            </Card>
           )}
         </>
       )}
 
-      {phase === "submitted" && (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-600" />
-            <h3 className="mt-4 text-lg font-semibold text-foreground">
-              Distributions Submitted Successfully
-            </h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Inserted {submitCount} distribution transactions totaling{" "}
-              {formatCurrencyDetailed(
-                distributionRows.reduce((s, r) => s + r.cashAmount, 0)
-              )}{" "}
-              for {selectedProperty?.name}.
+      {/* Single Transaction */}
+      {activeTab === "transaction" && (
+        <>
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-foreground">Single Transaction</h2>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              Record an individual transaction for a specific investor and property
             </p>
-            <button
-              onClick={handleReset}
-              style={{ paddingLeft: "2.5rem", paddingRight: "2.5rem" }}
-              className="mt-6 h-10 rounded-md bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
-              Enter Another Distribution
-            </button>
-          </CardContent>
-        </Card>
+          </div>
+          <TransactionInputForm properties={properties} investors={investors} clients={clients} />
+        </>
       )}
 
-      {/* Single Transaction Input */}
-      <div className="mt-10 mb-4">
-        <h2 className="text-lg font-semibold text-foreground">
-          Single Transaction
-        </h2>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          Record an individual transaction for a specific investor and property
-        </p>
-      </div>
-
-      <TransactionInputForm
-        properties={properties}
-        investors={investors}
-        clients={clients}
-      />
-
       {/* NAV Update */}
-      <div className="mt-10 mb-4">
-        <h2 className="text-lg font-semibold text-foreground">NAV Update</h2>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          Record a new total NAV and units outstanding for a property
-        </p>
-      </div>
+      {activeTab === "nav" && (
+        <>
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-foreground">NAV Update</h2>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              Record a new total NAV and units outstanding for a property
+            </p>
+          </div>
+          <ValuationInputForm properties={properties} investors={investors} transactions={transactions} />
+        </>
+      )}
 
-      <ValuationInputForm properties={properties} investors={investors} transactions={transactions} />
+      {/* Metrics */}
+      {activeTab === "metrics" && (
+        <>
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-foreground">Property Metrics</h2>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              Enter operating and financial metrics for a property on a given date
+            </p>
+          </div>
+          <MetricInputForm properties={properties} />
+        </>
+      )}
 
-      {/* Property Metrics Input */}
-      <div className="mt-10 mb-4">
-        <h2 className="text-lg font-semibold text-foreground">
-          Property Metrics
-        </h2>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          Enter operating and financial metrics for a property on a given date
-        </p>
-      </div>
-
-      <MetricInputForm properties={properties} />
-
-      {/* Property Locations Input */}
-      <div className="mt-10 mb-4">
-        <h2 className="text-lg font-semibold text-foreground">
-          Property Locations
-        </h2>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          Add building or point-of-interest pins to a property map by address
-        </p>
-      </div>
-
-      <LocationInputForm properties={properties} />
+      {/* Locations */}
+      {activeTab === "locations" && (
+        <>
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-foreground">Property Locations</h2>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              Add building or point-of-interest pins to a property map by address
+            </p>
+          </div>
+          <LocationInputForm properties={properties} />
+        </>
+      )}
 
       {/* Property Record */}
-      <div className="mt-10 mb-4">
-        <h2 className="text-lg font-semibold text-foreground">
-          Property Record
-        </h2>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          Create a new property or update an existing one's details
-        </p>
-      </div>
-
-      <PropertyForm properties={properties} />
+      {activeTab === "property" && (
+        <>
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-foreground">Property Record</h2>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              Create a new property or update an existing one's details
+            </p>
+          </div>
+          <PropertyForm properties={properties} />
+        </>
+      )}
 
       {/* Client Record */}
-      <div className="mt-10 mb-4">
-        <h2 className="text-lg font-semibold text-foreground">
-          Client Record
-        </h2>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          Create a new client or update an existing one's details
-        </p>
-      </div>
-
-      <ClientForm
-        clients={clients}
-        onSaved={(saved) =>
-          setClients((prev) => {
-            const idx = prev.findIndex((c) => c.client_id === saved.client_id);
-            if (idx >= 0) {
-              const next = [...prev];
-              next[idx] = saved;
-              return next;
+      {activeTab === "client" && (
+        <>
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-foreground">Client Record</h2>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              Create a new client or update an existing one's details
+            </p>
+          </div>
+          <ClientForm
+            clients={clients}
+            onSaved={(saved) =>
+              setClients((prev) => {
+                const idx = prev.findIndex((c) => c.client_id === saved.client_id);
+                if (idx >= 0) {
+                  const next = [...prev];
+                  next[idx] = saved;
+                  return next;
+                }
+                return [...prev, saved];
+              })
             }
-            return [...prev, saved];
-          })
-        }
-      />
+          />
+        </>
+      )}
     </div>
   );
 }

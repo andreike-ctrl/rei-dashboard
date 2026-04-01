@@ -260,7 +260,6 @@ export function DataInput() {
     { id: "client", label: "Client" },
   ] as const;
 
-  type Tab = (typeof TABS)[number]["id"];
 
   return (
     <div>

@@ -79,14 +79,16 @@ export function ClientForm({ clients, onSaved }: ClientFormProps) {
         }
       }
     } else {
-      const { error: err } = await supabase
+      const { data, error: err } = await supabase
         .from("clients")
         .update(payload)
-        .eq("client_id", selectedId);
+        .eq("client_id", selectedId)
+        .select("client_id");
       if (err) {
         setError(err.message);
+      } else if (!data || data.length === 0) {
+        setError("Update was blocked — check Supabase RLS policies for the clients table.");
       } else {
-        // Construct updated record from local state since RLS may block SELECT after UPDATE
         const updated: Client = {
           client_id: selectedId,
           name: payload.name,

@@ -73,20 +73,29 @@ export function ClientForm({ clients, onSaved }: ClientFormProps) {
         if (saved) {
           onSaved(saved);
           setSelectedId(saved.client_id);
+          setSuccess(true);
+        } else {
+          setError("Insert succeeded but no record was returned. Check Supabase RLS policies.");
         }
-        setSuccess(true);
       }
     } else {
-      const { data, error: err } = await supabase
+      const { error: err } = await supabase
         .from("clients")
         .update(payload)
-        .eq("client_id", selectedId)
-        .select();
+        .eq("client_id", selectedId);
       if (err) {
         setError(err.message);
       } else {
-        const saved = (data as Client[])?.[0];
-        if (saved) onSaved(saved);
+        // Construct updated record from local state since RLS may block SELECT after UPDATE
+        const updated: Client = {
+          client_id: selectedId,
+          name: payload.name,
+          domicile: payload.domicile ?? "",
+          email: payload.email ?? "",
+          phone: payload.phone ?? "",
+          address: payload.address ?? "",
+        };
+        onSaved(updated);
         setSuccess(true);
       }
     }

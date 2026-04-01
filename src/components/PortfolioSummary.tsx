@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { formatCurrency, formatQuarter, formatMultiple } from "@/lib/format";
 import { DividendsChart } from "@/components/DividendsChart";
 import { PortfolioMap } from "@/components/PortfolioMap";
-import type { Valuation, Transaction, PropertyLocation } from "@/types/database";
+import type { Valuation, Transaction, PropertyLocation, Property } from "@/types/database";
 
 interface PortfolioSummaryProps {
   /** All valuations for the currently-filtered properties */
@@ -32,6 +32,8 @@ interface PortfolioSummaryProps {
   currentMoic: number | null;
   /** Property locations for the portfolio map */
   locations: PropertyLocation[];
+  /** Filtered properties (for pin colors) */
+  properties: Property[];
 }
 
 interface ChartDataPoint {
@@ -89,6 +91,7 @@ export function PortfolioSummary({
   valuations,
   transactions,
   locations,
+  properties,
   totalNav,
   propertyCount,
   totalRaised,
@@ -247,7 +250,7 @@ export function PortfolioSummary({
         </Card>
       </div>
       <div className="sm:col-span-3 lg:col-span-2">
-        <PortfolioMap locations={locations} />
+        <PortfolioMap locations={locations} properties={properties} />
       </div>
 
       {/* Dividends chart spanning full width */}

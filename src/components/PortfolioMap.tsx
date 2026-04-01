@@ -1,17 +1,30 @@
 import { useMemo } from "react";
-import Map, { Marker, NavigationControl } from "react-map-gl/mapbox";
+import MapGL, { Marker, NavigationControl } from "react-map-gl/mapbox";
 import { MapPin } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import type { PropertyLocation } from "@/types/database";
+import type { PropertyLocation, Property } from "@/types/database";
 import "mapbox-gl/dist/mapbox-gl.css";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined;
 
+const ASSET_CLASS_COLORS: Record<string, string> = {
+  Multifamily: "#1e40af",
+  Student: "#16a34a",
+  Office: "#94a3b8",
+};
+const DEFAULT_PIN_COLOR = "#64748b";
+
 interface PortfolioMapProps {
   locations: PropertyLocation[];
+  properties: Property[];
 }
 
-export function PortfolioMap({ locations }: PortfolioMapProps) {
+export function PortfolioMap({ locations, properties }: PortfolioMapProps) {
+  const assetClassByPropertyId = useMemo(
+    () => new Map(properties.map((p) => [p.property_id, p.asset_class])),
+    [properties]
+  );
+
   const buildings = useMemo(() => locations.filter((l) => l.type === "building"), [locations]);
 
   const { center, zoom } = useMemo(() => {
@@ -54,26 +67,30 @@ export function PortfolioMap({ locations }: PortfolioMapProps) {
       </CardHeader>
       <CardContent className="flex-1 p-0 pb-6 px-6">
         <div className="h-full min-h-[240px] w-full overflow-hidden">
-          <Map
+          <MapGL
             initialViewState={{ latitude: center.lat, longitude: center.lon, zoom }}
             style={{ width: "100%", height: "100%" }}
             mapStyle="mapbox://styles/mapbox/light-v11"
             mapboxAccessToken={MAPBOX_TOKEN}
           >
             <NavigationControl position="top-right" />
-            {buildings.map((loc) => (
-              <Marker key={loc.location_id} latitude={loc.lat} longitude={loc.lon} anchor="bottom">
-                <div className="group relative flex flex-col items-center">
-                  <MapPin className="h-6 w-6 text-primary drop-shadow-md" fill="currentColor" strokeWidth={1.5} />
-                  {loc.label && (
-                    <span className="absolute -top-6 whitespace-nowrap rounded bg-background px-2 py-0.5 text-xs font-medium text-foreground shadow-md border border-border opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                      {loc.label}
-                    </span>
-                  )}
-                </div>
-              </Marker>
-            ))}
-          </Map>
+            {buildings.map((loc) => {
+              const assetClass = assetClassByPropertyId.get(loc.property_id);
+              const color = ASSET_CLASS_COLORS[assetClass ?? ""] ?? DEFAULT_PIN_COLOR;
+              return (
+                <Marker key={loc.location_id} latitude={loc.lat} longitude={loc.lon} anchor="bottom">
+                  <div className="group relative flex flex-col items-center">
+                    <MapPin className="h-6 w-6 drop-shadow-md" style={{ color }} fill="currentColor" strokeWidth={1.5} />
+                    {loc.label && (
+                      <span className="absolute -top-6 whitespace-nowrap rounded bg-background px-2 py-0.5 text-xs font-medium text-foreground shadow-md border border-border opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                        {loc.label}
+                      </span>
+                    )}
+                  </div>
+                </Marker>
+              );
+            })}
+          </MapGL>
         </div>
       </CardContent>
     </Card>

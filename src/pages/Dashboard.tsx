@@ -384,6 +384,7 @@ export function Dashboard() {
         valuations={filteredValuations}
         transactions={filteredTransactions}
         locations={filteredLocations}
+        properties={filtered}
         totalNav={totalNav}
         propertyCount={filtered.length}
         totalRaised={totalRaised}

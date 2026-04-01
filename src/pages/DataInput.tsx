@@ -11,6 +11,7 @@ import { MetricInputForm } from "@/components/MetricInputForm";
 import { ValuationInputForm } from "@/components/ValuationInputForm";
 import { LocationInputForm } from "@/components/LocationInputForm";
 import { PropertyForm } from "@/components/PropertyForm";
+import { ClientForm } from "@/components/ClientForm";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Spinner } from "@/components/ui/Spinner";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
@@ -421,6 +422,31 @@ export function DataInput() {
       </div>
 
       <PropertyForm properties={properties} />
+
+      {/* Client Record */}
+      <div className="mt-10 mb-4">
+        <h2 className="text-lg font-semibold text-foreground">
+          Client Record
+        </h2>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          Create a new client or update an existing one's details
+        </p>
+      </div>
+
+      <ClientForm
+        clients={clients}
+        onSaved={(saved) =>
+          setClients((prev) => {
+            const idx = prev.findIndex((c) => c.client_id === saved.client_id);
+            if (idx >= 0) {
+              const next = [...prev];
+              next[idx] = saved;
+              return next;
+            }
+            return [...prev, saved];
+          })
+        }
+      />
     </div>
   );
 }

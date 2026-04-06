@@ -358,7 +358,7 @@ export function NavReportPDF({ client, investors: _investors, period, snapshot }
           <View style={{ marginTop: 24 }}>
             <Text style={{ fontSize: 7, fontFamily: "Helvetica-Bold", color: C.gray400, letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 4 }}>Disclaimer</Text>
             <Text style={{ fontSize: 7, color: C.gray400, lineHeight: 1.6 }}>
-              {"This report is a period-end snapshot. All figures — including capital invested, distributions received, and Net Asset Value (NAV) — reflect transactions and valuations recorded on or before the last day of the stated period. NAV figures represent management's internal estimates of fair value and have not been independently appraised or verified by a third-party valuation firm. Capital invested and distributions received are life-to-date cumulative totals as of the period end. Past performance is not indicative of future results. This document is confidential and intended solely for the named recipient."}
+              {"This report is a period-end snapshot. All figures, including capital invested, distributions received, and Net Asset Value (NAV), reflect transactions and valuations recorded on or before the last day of the stated period. NAV figures represent management's internal estimates of fair value and have not been independently appraised or verified by a third-party valuation firm. Capital invested and distributions received are life-to-date cumulative totals as of the period end. Past performance is not indicative of future results. This document is confidential and intended solely for the named recipient."}
             </Text>
           </View>
 

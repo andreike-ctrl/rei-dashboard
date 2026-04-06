@@ -243,6 +243,7 @@ export interface NavSnapshotRow {
   property: Property;
   capital: number;
   distributions: number;
+  otherProceeds: number;
   nav: number | null;
   moic: number | null;
   profitLoss: number;
@@ -252,6 +253,7 @@ export interface NavSnapshot {
   rows: NavSnapshotRow[];
   totalCapital: number;
   totalDistributions: number;
+  totalOtherProceeds: number;
   totalNav: number;
   totalMoic: number | null;
   totalProfitLoss: number;
@@ -295,7 +297,7 @@ export function NavReportPDF({ client, investors: _investors, period, snapshot }
               {client.domicile ? <Text style={s.clientLine}>{client.domicile}</Text> : null}
             </View>
             <View style={s.clientDateBlock}>
-              <Text style={s.clientDateLabel}>NAV Period</Text>
+              <Text style={s.clientDateLabel}>Period-End Snapshot</Text>
               <Text style={s.clientDateValue}>{period}</Text>
             </View>
           </View>
@@ -304,9 +306,10 @@ export function NavReportPDF({ client, investors: _investors, period, snapshot }
           <View style={s.section}>
             <Text style={s.sectionTitle}>Portfolio Summary</Text>
             {[
-              { label: "Total Capital Invested", value: fmtCurrency(snapshot.totalCapital) },
+              { label: "Total Capital Invested (Life to Date)", value: fmtCurrency(snapshot.totalCapital) },
               { label: "Current NAV", value: fmtCurrency(snapshot.totalNav) },
-              { label: "Total Distributions Received", value: fmtCurrency(snapshot.totalDistributions) },
+              { label: "Total Distributions Received (Life to Date)", value: fmtCurrency(snapshot.totalDistributions) },
+              { label: "Other Proceeds (Sale / Redemption)", value: fmtCurrency(snapshot.totalOtherProceeds) },
               { label: "Estimated Profit / Loss", value: fmtCurrency(snapshot.totalProfitLoss) },
               { label: "Estimated MOIC", value: fmtMultiple(snapshot.totalMoic) },
             ].map((item) => (
@@ -322,9 +325,10 @@ export function NavReportPDF({ client, investors: _investors, period, snapshot }
             <Text style={s.sectionTitle}>Holdings</Text>
             <View style={s.tableHead}>
               <Text style={[s.thText, { flex: 3 }]}>Property</Text>
-              <Text style={[s.thText, { flex: 2, textAlign: "right" }]}>Capital Invested</Text>
+              <Text style={[s.thText, { flex: 2, textAlign: "right" }]}>Capital Invested (LTD)</Text>
               <Text style={[s.thText, { flex: 2, textAlign: "right" }]}>Current NAV</Text>
-              <Text style={[s.thText, { flex: 2, textAlign: "right" }]}>Distributions</Text>
+              <Text style={[s.thText, { flex: 2, textAlign: "right" }]}>Distributions (LTD)</Text>
+              <Text style={[s.thText, { flex: 2, textAlign: "right" }]}>Other Proceeds</Text>
               <Text style={[s.thText, { flex: 1, textAlign: "right" }]}>Est. MOIC</Text>
               <Text style={[s.thText, { flex: 2, textAlign: "right" }]}>Profit / Loss</Text>
             </View>
@@ -334,6 +338,7 @@ export function NavReportPDF({ client, investors: _investors, period, snapshot }
                 <Text style={[s.tdText, { flex: 2, textAlign: "right" }]}>{fmtCurrency(row.capital)}</Text>
                 <Text style={[s.tdText, { flex: 2, textAlign: "right" }]}>{row.nav != null ? fmtCurrency(row.nav) : "—"}</Text>
                 <Text style={[s.tdText, { flex: 2, textAlign: "right" }]}>{fmtCurrency(row.distributions)}</Text>
+                <Text style={[s.tdText, { flex: 2, textAlign: "right" }]}>{row.otherProceeds !== 0 ? fmtCurrency(row.otherProceeds) : "—"}</Text>
                 <Text style={[s.tdText, { flex: 1, textAlign: "right" }]}>{fmtMultiple(row.moic)}</Text>
                 <Text style={[s.tdText, { flex: 2, textAlign: "right" }]}>{fmtCurrency(row.profitLoss)}</Text>
               </View>
@@ -343,6 +348,7 @@ export function NavReportPDF({ client, investors: _investors, period, snapshot }
               <Text style={[s.tdBold, { flex: 2, textAlign: "right" }]}>{fmtCurrency(snapshot.totalCapital)}</Text>
               <Text style={[s.tdBold, { flex: 2, textAlign: "right" }]}>{fmtCurrency(snapshot.totalNav)}</Text>
               <Text style={[s.tdBold, { flex: 2, textAlign: "right" }]}>{fmtCurrency(snapshot.totalDistributions)}</Text>
+              <Text style={[s.tdBold, { flex: 2, textAlign: "right" }]}>{fmtCurrency(snapshot.totalOtherProceeds)}</Text>
               <Text style={[s.tdBold, { flex: 1, textAlign: "right" }]}>{fmtMultiple(snapshot.totalMoic)}</Text>
               <Text style={[s.tdBold, { flex: 2, textAlign: "right" }]}>{fmtCurrency(snapshot.totalProfitLoss)}</Text>
             </View>
@@ -352,7 +358,7 @@ export function NavReportPDF({ client, investors: _investors, period, snapshot }
           <View style={{ marginTop: 24 }}>
             <Text style={{ fontSize: 7, fontFamily: "Helvetica-Bold", color: C.gray400, letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 4 }}>Disclaimer</Text>
             <Text style={{ fontSize: 7, color: C.gray400, lineHeight: 1.6 }}>
-              {"The Net Asset Value (NAV) figures presented in this report represent management's internal estimates of fair value based on available information as of the stated NAV period. These valuations have not been independently appraised or verified by a third-party valuation firm and are subject to change. Past performance is not indicative of future results. This document is confidential and intended solely for the named recipient."}
+              {"This report is a period-end snapshot. All figures — including capital invested, distributions received, and Net Asset Value (NAV) — reflect transactions and valuations recorded on or before the last day of the stated period. NAV figures represent management's internal estimates of fair value and have not been independently appraised or verified by a third-party valuation firm. Capital invested and distributions received are life-to-date cumulative totals as of the period end. Past performance is not indicative of future results. This document is confidential and intended solely for the named recipient."}
             </Text>
           </View>
 

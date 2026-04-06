@@ -87,29 +87,38 @@ export function NavReport() {
   // Reset overrides when period changes
   useEffect(() => { setNavOverrides(new Map()); }, [period]);
 
-  // Base per-property data — latest NAV and all distributions life-to-date (period only affects PDF label)
+  // Period end date: H1 YYYY → YYYY-06-30, H2 YYYY → YYYY-12-31
+  const periodEndDate = useMemo(() => {
+    const [half, year] = period.split(" ");
+    return half === "H1" ? `${year}-06-30` : `${year}-12-31`;
+  }, [period]);
+
+  // Base per-property data — transactions and valuations up to period end date
   const baseRows = useMemo(() => {
     if (!client || dataLoading || properties.length === 0) return [];
     const investorIds = new Set(investors.map((i) => i.investor_id));
     const propMap = new Map(properties.map((p) => [p.property_id, p]));
 
-    // Latest valuation per property (no date cutoff)
+    // Latest valuation per property on or before the period end date
     const latestVal = new Map<number, Valuation>();
     for (const v of valuations) {
+      if (v.date > periodEndDate) continue;
       const existing = latestVal.get(v.property_id);
       if (!existing || v.date > existing.date) latestVal.set(v.property_id, v);
     }
 
-    // All client transactions life-to-date
-    const clientTxns = transactions.filter((t) => investorIds.has(t.investor_id));
+    // Client transactions up to and including the period end date
+    const clientTxns = transactions.filter((t) => investorIds.has(t.investor_id) && t.date <= periodEndDate);
     const unitsByProp = new Map<number, number>();
     const capitalByProp = new Map<number, number>();
     const distByProp = new Map<number, number>();
+    const otherProceedsByProp = new Map<number, number>();
 
     for (const t of clientTxns) {
       if (t.units != null) unitsByProp.set(t.property_id, (unitsByProp.get(t.property_id) ?? 0) + t.units);
       if (FUNDING.has(t.type)) capitalByProp.set(t.property_id, (capitalByProp.get(t.property_id) ?? 0) + Math.abs(t.cash_amount));
-      if (t.type === "Distribution") distByProp.set(t.property_id, (distByProp.get(t.property_id) ?? 0) + t.cash_amount);
+      else if (t.type === "Distribution") distByProp.set(t.property_id, (distByProp.get(t.property_id) ?? 0) + t.cash_amount);
+      else otherProceedsByProp.set(t.property_id, (otherProceedsByProp.get(t.property_id) ?? 0) + t.cash_amount);
     }
 
     return Array.from(propMap.values())
@@ -122,11 +131,12 @@ export function NavReport() {
           property: p,
           capital: capitalByProp.get(p.property_id) ?? 0,
           distributions: distByProp.get(p.property_id) ?? 0,
+          otherProceeds: otherProceedsByProp.get(p.property_id) ?? 0,
           baseNav,
         };
       })
       .sort((a, b) => a.property.name.localeCompare(b.property.name));
-  }, [client, dataLoading, properties, valuations, transactions, investors]);
+  }, [client, dataLoading, properties, valuations, transactions, investors, periodEndDate]);
 
   // Snapshot using overrides
   const snapshot: NavSnapshot | null = useMemo(() => {
@@ -137,19 +147,20 @@ export function NavReport() {
       const nav = overrideStr !== undefined && overrideStr !== ""
         ? parseFloat(overrideStr)
         : r.baseNav;
-      const totalValue = (nav ?? 0) + r.distributions;
+      const totalValue = (nav ?? 0) + r.distributions + r.otherProceeds;
       const moic = r.capital > 0 ? totalValue / r.capital : null;
       const profitLoss = totalValue - r.capital;
-      return { property: r.property, capital: r.capital, distributions: r.distributions, nav, moic, profitLoss };
+      return { property: r.property, capital: r.capital, distributions: r.distributions, otherProceeds: r.otherProceeds, nav, moic, profitLoss };
     });
 
     const totalCapital = rows.reduce((s, r) => s + r.capital, 0);
     const totalDistributions = rows.reduce((s, r) => s + r.distributions, 0);
+    const totalOtherProceeds = rows.reduce((s, r) => s + r.otherProceeds, 0);
     const totalNav = rows.reduce((s, r) => s + (r.nav ?? 0), 0);
-    const totalMoic = totalCapital > 0 ? (totalNav + totalDistributions) / totalCapital : null;
+    const totalMoic = totalCapital > 0 ? (totalNav + totalDistributions + totalOtherProceeds) / totalCapital : null;
     const totalProfitLoss = rows.reduce((s, r) => s + r.profitLoss, 0);
 
-    return { rows, totalCapital, totalDistributions, totalNav, totalMoic, totalProfitLoss };
+    return { rows, totalCapital, totalDistributions, totalOtherProceeds, totalNav, totalMoic, totalProfitLoss };
   }, [client, dataLoading, baseRows, navOverrides]);
 
   const pdfReady = snapshot !== null && client !== null;
@@ -163,7 +174,7 @@ export function NavReport() {
       <div className="border border-border bg-background p-6">
         <h2 className="text-base font-semibold text-foreground mb-4">NAV Report Builder</h2>
         <p className="mb-4 text-xs text-muted-foreground">
-          <span className="font-medium text-foreground">Note:</span> This report reflects current NAV and distributions as recorded in the system. Selecting a prior period does not produce a retroactive snapshot, it only adjusts the period text that is printed in the PDF.
+          <span className="font-medium text-foreground">Note:</span> This report is a snapshot as of the selected period end date. Transactions and valuations after that date are excluded. Capital invested and distributions received are life-to-date figures up to the period end.
         </p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="flex flex-col gap-1.5">

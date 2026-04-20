@@ -325,10 +325,16 @@ export function NavReportPDF({ client, investors: _investors, period, snapshot }
             <Text style={s.sectionTitle}>Holdings</Text>
             <View style={s.tableHead}>
               <Text style={[s.thText, { flex: 3 }]}>Property</Text>
-              <Text style={[s.thText, { flex: 2, textAlign: "right" }]}>Capital Invested (LTD)</Text>
+              <View style={{ flex: 2, alignItems: "flex-end" }}>
+                <Text style={s.thText}>Capital</Text>
+                <Text style={s.thText}>Invested (LTD)</Text>
+              </View>
               <Text style={[s.thText, { flex: 2, textAlign: "right" }]}>Current NAV</Text>
               <Text style={[s.thText, { flex: 2, textAlign: "right" }]}>Distributions (LTD)</Text>
-              <Text style={[s.thText, { flex: 2, textAlign: "right" }]}>Other Proceeds</Text>
+              <View style={{ flex: 2, alignItems: "flex-end" }}>
+                <Text style={s.thText}>Other</Text>
+                <Text style={s.thText}>Proceeds</Text>
+              </View>
               <Text style={[s.thText, { flex: 1, textAlign: "right" }]}>Est. MOIC</Text>
               <Text style={[s.thText, { flex: 2, textAlign: "right" }]}>Profit / Loss</Text>
             </View>

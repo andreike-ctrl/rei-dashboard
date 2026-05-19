@@ -84,6 +84,19 @@ const QUARTER_OPTIONS = buildQuarterOptions();
 const inputClass =
   "h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1";
 
+function sanitizeInt(val: string): string {
+  const negative = val.startsWith("-");
+  return (negative ? "-" : "") + val.replace(/[^\d]/g, "");
+}
+
+function sanitizeDecimal(val: string): string {
+  const negative = val.startsWith("-");
+  let s = val.replace(/,/g, ".").replace(/[^\d.]/g, "");
+  const dotIdx = s.indexOf(".");
+  if (dotIdx !== -1) s = s.slice(0, dotIdx + 1) + s.slice(dotIdx + 1).replace(/\./g, "");
+  return (negative ? "-" : "") + s;
+}
+
 function emptyValues(): Record<string, string> {
   const v: Record<string, string> = {};
   for (const m of ALL_METRICS) v[m.type] = "";
@@ -154,7 +167,9 @@ export function MetricInputForm({ properties }: MetricInputFormProps) {
   const isValid = propertyId != null && quarterDate !== "" && filledCount > 0;
 
   function handleValueChange(metricType: string, val: string) {
-    setValues((prev) => ({ ...prev, [metricType]: val }));
+    const metric = ALL_METRICS.find((m) => m.type === metricType);
+    const sanitized = metric?.step === "1" ? sanitizeInt(val) : sanitizeDecimal(val);
+    setValues((prev) => ({ ...prev, [metricType]: sanitized }));
   }
 
   async function handleSubmit() {
@@ -316,8 +331,8 @@ export function MetricInputForm({ properties }: MetricInputFormProps) {
                       </span>
                     </label>
                     <input
-                      type="number"
-                      step={m.step}
+                      type="text"
+                      inputMode={m.step === "1" ? "numeric" : "decimal"}
                       placeholder={m.placeholder}
                       value={values[m.type]}
                       onChange={(e) => handleValueChange(m.type, e.target.value)}

@@ -12,6 +12,19 @@ import type { Property } from "@/types/database";
 const inputClass =
   "h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1";
 
+function sanitizeInt(val: string): string {
+  const negative = val.startsWith("-");
+  return (negative ? "-" : "") + val.replace(/[^\d]/g, "");
+}
+
+function sanitizeDecimal(val: string): string {
+  const negative = val.startsWith("-");
+  let s = val.replace(/,/g, ".").replace(/[^\d.]/g, "");
+  const dotIdx = s.indexOf(".");
+  if (dotIdx !== -1) s = s.slice(0, dotIdx + 1) + s.slice(dotIdx + 1).replace(/\./g, "");
+  return (negative ? "-" : "") + s;
+}
+
 const textareaClass =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 resize-y";
 
@@ -170,6 +183,8 @@ export function PropertyForm({ properties }: Props) {
   function set<K extends keyof Fields>(key: K, value: Fields[K]) {
     setFields((prev) => ({ ...prev, [key]: value }));
   }
+  function setInt(key: keyof Fields, val: string) { set(key, sanitizeInt(val)); }
+  function setDec(key: keyof Fields, val: string) { set(key, sanitizeDecimal(val)); }
 
   const isNew = selectedId === "";
   const isValid = fields.name.trim() !== "" && fields.investment_date !== "";
@@ -383,10 +398,10 @@ export function PropertyForm({ properties }: Props) {
                 Latitude
               </label>
               <input
-                type="number"
-                step="0.000001"
+                type="text"
+                inputMode="decimal"
                 value={fields.lat}
-                onChange={(e) => set("lat", e.target.value)}
+                onChange={(e) => setDec("lat", e.target.value)}
                 className={inputClass}
                 placeholder="e.g. 30.2672"
               />
@@ -396,10 +411,10 @@ export function PropertyForm({ properties }: Props) {
                 Longitude
               </label>
               <input
-                type="number"
-                step="0.000001"
+                type="text"
+                inputMode="decimal"
                 value={fields.lon}
-                onChange={(e) => set("lon", e.target.value)}
+                onChange={(e) => setDec("lon", e.target.value)}
                 className={inputClass}
                 placeholder="e.g. -97.7431"
               />
@@ -467,10 +482,10 @@ export function PropertyForm({ properties }: Props) {
                 Units
               </label>
               <input
-                type="number"
-                step="1"
+                type="text"
+                inputMode="numeric"
                 value={fields.units}
-                onChange={(e) => set("units", e.target.value)}
+                onChange={(e) => setInt("units", e.target.value)}
                 className={inputClass}
                 placeholder="e.g. 200"
               />
@@ -480,10 +495,10 @@ export function PropertyForm({ properties }: Props) {
                 Buildings
               </label>
               <input
-                type="number"
-                step="1"
+                type="text"
+                inputMode="numeric"
                 value={fields.buildings}
-                onChange={(e) => set("buildings", e.target.value)}
+                onChange={(e) => setInt("buildings", e.target.value)}
                 className={inputClass}
                 placeholder="e.g. 4"
               />
@@ -493,10 +508,10 @@ export function PropertyForm({ properties }: Props) {
                 Beds
               </label>
               <input
-                type="number"
-                step="1"
+                type="text"
+                inputMode="numeric"
                 value={fields.beds}
-                onChange={(e) => set("beds", e.target.value)}
+                onChange={(e) => setInt("beds", e.target.value)}
                 className={inputClass}
                 placeholder="e.g. 400"
               />
@@ -515,10 +530,10 @@ export function PropertyForm({ properties }: Props) {
                 VO2 Raise
               </label>
               <input
-                type="number"
-                step="1"
+                type="text"
+                inputMode="numeric"
                 value={fields.vo2_raise}
-                onChange={(e) => set("vo2_raise", e.target.value)}
+                onChange={(e) => setInt("vo2_raise", e.target.value)}
                 className={inputClass}
                 placeholder="0"
               />
@@ -528,10 +543,10 @@ export function PropertyForm({ properties }: Props) {
                 Total Equity
               </label>
               <input
-                type="number"
-                step="1"
+                type="text"
+                inputMode="numeric"
                 value={fields.total_equity}
-                onChange={(e) => set("total_equity", e.target.value)}
+                onChange={(e) => setInt("total_equity", e.target.value)}
                 className={inputClass}
                 placeholder="0"
               />
@@ -541,10 +556,10 @@ export function PropertyForm({ properties }: Props) {
                 Total Debt
               </label>
               <input
-                type="number"
-                step="1"
+                type="text"
+                inputMode="numeric"
                 value={fields.total_debt}
-                onChange={(e) => set("total_debt", e.target.value)}
+                onChange={(e) => setInt("total_debt", e.target.value)}
                 className={inputClass}
                 placeholder="0"
               />
@@ -554,10 +569,10 @@ export function PropertyForm({ properties }: Props) {
                 Purchase Price
               </label>
               <input
-                type="number"
-                step="1"
+                type="text"
+                inputMode="numeric"
                 value={fields.purchase_price}
-                onChange={(e) => set("purchase_price", e.target.value)}
+                onChange={(e) => setInt("purchase_price", e.target.value)}
                 className={inputClass}
                 placeholder="0"
               />
@@ -577,10 +592,10 @@ export function PropertyForm({ properties }: Props) {
                 <span className="font-normal text-muted-foreground">(%)</span>
               </label>
               <input
-                type="number"
-                step="0.01"
+                type="text"
+                inputMode="decimal"
                 value={fields.projected_lp_irr}
-                onChange={(e) => set("projected_lp_irr", e.target.value)}
+                onChange={(e) => setDec("projected_lp_irr", e.target.value)}
                 className={inputClass}
                 placeholder="0.00"
               />
@@ -591,10 +606,10 @@ export function PropertyForm({ properties }: Props) {
                 <span className="font-normal text-muted-foreground">(%)</span>
               </label>
               <input
-                type="number"
-                step="0.01"
+                type="text"
+                inputMode="decimal"
                 value={fields.projected_irr}
-                onChange={(e) => set("projected_irr", e.target.value)}
+                onChange={(e) => setDec("projected_irr", e.target.value)}
                 className={inputClass}
                 placeholder="0.00"
               />
@@ -605,10 +620,10 @@ export function PropertyForm({ properties }: Props) {
                 <span className="font-normal text-muted-foreground">(x)</span>
               </label>
               <input
-                type="number"
-                step="0.01"
+                type="text"
+                inputMode="decimal"
                 value={fields.projected_multiple}
-                onChange={(e) => set("projected_multiple", e.target.value)}
+                onChange={(e) => setDec("projected_multiple", e.target.value)}
                 className={inputClass}
                 placeholder="0.00"
               />
@@ -619,10 +634,10 @@ export function PropertyForm({ properties }: Props) {
                 <span className="font-normal text-muted-foreground">(%)</span>
               </label>
               <input
-                type="number"
-                step="0.01"
+                type="text"
+                inputMode="decimal"
                 value={fields.senior_loan_rate}
-                onChange={(e) => set("senior_loan_rate", e.target.value)}
+                onChange={(e) => setDec("senior_loan_rate", e.target.value)}
                 className={inputClass}
                 placeholder="0.00"
               />

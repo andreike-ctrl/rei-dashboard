@@ -31,13 +31,16 @@ interface ChartDataPoint {
   value2?: number;
 }
 
-function buildQuarterMap(metrics: Metric[], metricType: string): Map<string, { value: number; sortKey: string }> {
-  const byQuarter = new Map<string, { value: number; sortKey: string }>();
+function buildQuarterMap(metrics: Metric[], metricType: string): Map<string, { value: number; sortKey: string; metricId: number }> {
+  const byQuarter = new Map<string, { value: number; sortKey: string; metricId: number }>();
   for (const m of metrics.filter((m) => m.metric_type === metricType)) {
     const key = formatQuarter(m.as_of_date);
     const existing = byQuarter.get(key);
-    if (!existing || m.as_of_date > existing.sortKey) {
-      byQuarter.set(key, { value: m.metric_value, sortKey: m.as_of_date });
+    const newer = !existing
+      || m.as_of_date > existing.sortKey
+      || (m.as_of_date === existing.sortKey && m.metric_id > existing.metricId);
+    if (newer) {
+      byQuarter.set(key, { value: m.metric_value, sortKey: m.as_of_date, metricId: m.metric_id });
     }
   }
   return byQuarter;

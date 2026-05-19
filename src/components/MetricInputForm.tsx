@@ -133,9 +133,10 @@ export function MetricInputForm({ properties }: MetricInputFormProps) {
 
     supabase
       .from("metrics")
-      .select("metric_type, metric_value, notes")
+      .select("metric_type, metric_value, notes, metric_id")
       .eq("property_id", propertyId)
       .eq("as_of_date", quarterDate)
+      .order("metric_id", { ascending: true })
       .then(({ data }) => {
         if (cancelled) return;
         setLoadingExisting(false);

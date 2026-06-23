@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { formatNumber } from "@/lib/format";
+import { formatNumber, formatCurrency } from "@/lib/format";
 import type { Transaction, Investor, Client } from "@/types/database";
 
 /** Transaction types that affect unit ownership */
@@ -25,6 +25,7 @@ interface CapTableRow {
   clientName: string;
   units: number;
   ownership: number;
+  funding: number;
 }
 
 export function CapTable({ transactions, investors, clients }: CapTableProps) {
@@ -35,8 +36,14 @@ export function CapTable({ transactions, investors, clients }: CapTableProps) {
 
     // Sum units per investor from relevant transaction types
     const unitsByInvestor = new Map<number, number>();
+    const fundingByInvestor = new Map<number, number>();
 
     for (const txn of transactions) {
+      if (txn.type === "Funding") {
+        const current = fundingByInvestor.get(txn.investor_id) ?? 0;
+        fundingByInvestor.set(txn.investor_id, current + txn.cash_amount);
+      }
+
       if (!UNIT_TRANSACTION_TYPES.has(txn.type)) continue;
       if (txn.units == null) continue;
 
@@ -46,6 +53,10 @@ export function CapTable({ transactions, investors, clients }: CapTableProps) {
 
     // Build rows
     const totalUnits = Array.from(unitsByInvestor.values()).reduce(
+      (a, b) => a + b,
+      0
+    );
+    const totalFunding = Array.from(fundingByInvestor.values()).reduce(
       (a, b) => a + b,
       0
     );
@@ -65,13 +76,14 @@ export function CapTable({ transactions, investors, clients }: CapTableProps) {
         clientName: client?.name ?? "—",
         units,
         ownership: totalUnits > 0 ? units / totalUnits : 0,
+        funding: fundingByInvestor.get(investorId) ?? 0,
       });
     }
 
     // Sort by units descending
     result.sort((a, b) => b.units - a.units);
 
-    return { rows: result, totalUnits };
+    return { rows: result, totalUnits, totalFunding };
   }, [transactions, investors, clients]);
 
   if (rows.rows.length === 0) {
@@ -97,6 +109,9 @@ export function CapTable({ transactions, investors, clients }: CapTableProps) {
                   Type
                 </th>
                 <th className="pb-3 pr-4 text-right font-medium text-muted-foreground">
+                  Funding
+                </th>
+                <th className="pb-3 pr-4 text-right font-medium text-muted-foreground">
                   Units
                 </th>
                 <th className="pb-3 text-right font-medium text-muted-foreground">
@@ -120,6 +135,9 @@ export function CapTable({ transactions, investors, clients }: CapTableProps) {
                     {row.investorType}
                   </td>
                   <td className="py-3 pr-4 text-right tabular-nums text-foreground">
+                    {row.funding !== 0 ? formatCurrency(row.funding) : "—"}
+                  </td>
+                  <td className="py-3 pr-4 text-right tabular-nums text-foreground">
                     {formatNumber(row.units)}
                   </td>
                   <td className="py-3 text-right tabular-nums text-foreground">
@@ -135,6 +153,9 @@ export function CapTable({ transactions, investors, clients }: CapTableProps) {
                   className="pt-3 pr-4 font-semibold text-foreground"
                 >
                   Total
+                </td>
+                <td className="pt-3 pr-4 text-right font-semibold tabular-nums text-foreground">
+                  {formatCurrency(rows.totalFunding)}
                 </td>
                 <td className="pt-3 pr-4 text-right font-semibold tabular-nums text-foreground">
                   {formatNumber(rows.totalUnits)}

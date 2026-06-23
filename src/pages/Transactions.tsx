@@ -73,7 +73,7 @@ export function Transactions() {
     load();
   }, []);
 
-  const { propertyMap, investorMap, clientMap, investorToClient, allTypes } = useMemo(() => {
+  const { propertyMap, investorMap, investorToClient, allTypes } = useMemo(() => {
     const propMap = new Map(properties.map((p) => [p.property_id, p]));
     const invMap = new Map(investors.map((i) => [i.investor_id, i]));
     const cliMap = new Map(clients.map((c) => [c.client_id, c]));
@@ -83,7 +83,7 @@ export function Transactions() {
       if (client) invToClient.set(inv.investor_id, client);
     }
     const types = [...new Set(transactions.map((t) => t.type))].sort();
-    return { propertyMap: propMap, investorMap: invMap, clientMap: cliMap, investorToClient: invToClient, allTypes: types };
+    return { propertyMap: propMap, investorMap: invMap, investorToClient: invToClient, allTypes: types };
   }, [transactions, properties, investors, clients]);
 
   const filtered = useMemo(() => {

@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { Building2, Users, ClipboardEdit, FileText, LogOut, Menu, X, ChevronDown } from "lucide-react";
+import { Building2, Users, ArrowLeftRight, ClipboardEdit, FileText, LogOut, Menu, X, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/AuthProvider";
 
 const navItems = [
   { to: "/", label: "Properties", icon: Building2 },
   { to: "/clients", label: "Clients", icon: Users },
+  { to: "/transactions", label: "Transactions", icon: ArrowLeftRight },
   { to: "/data-input", label: "Data Input", icon: ClipboardEdit },
 ];
 

@@ -12,6 +12,7 @@ import { ValuationInputForm } from "@/components/ValuationInputForm";
 import { LocationInputForm } from "@/components/LocationInputForm";
 import { PropertyForm } from "@/components/PropertyForm";
 import { ClientForm } from "@/components/ClientForm";
+import { InvestorForm } from "@/components/InvestorForm";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Spinner } from "@/components/ui/Spinner";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
@@ -258,6 +259,7 @@ export function DataInput() {
     { id: "locations", label: "Locations" },
     { id: "property", label: "Property" },
     { id: "client", label: "Client" },
+    { id: "investor", label: "Investor" },
   ] as const;
 
 
@@ -454,6 +456,33 @@ export function DataInput() {
             onSaved={(saved) =>
               setClients((prev) => {
                 const idx = prev.findIndex((c) => c.client_id === saved.client_id);
+                if (idx >= 0) {
+                  const next = [...prev];
+                  next[idx] = saved;
+                  return next;
+                }
+                return [...prev, saved];
+              })
+            }
+          />
+        </>
+      )}
+
+      {/* Investor Record */}
+      {activeTab === "investor" && (
+        <>
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-foreground">Investor Record</h2>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              Create a new investor or update an existing one's details
+            </p>
+          </div>
+          <InvestorForm
+            investors={investors}
+            clients={clients}
+            onSaved={(saved) =>
+              setInvestors((prev) => {
+                const idx = prev.findIndex((i) => i.investor_id === saved.investor_id);
                 if (idx >= 0) {
                   const next = [...prev];
                   next[idx] = saved;

@@ -12,12 +12,26 @@ interface InvestorFormProps {
 
 const INVESTOR_TYPES = ["Individual", "Joint", "Entity", "Trust", "LP", "LLC"];
 
+const US_STATES = [
+  "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado",
+  "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho",
+  "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana",
+  "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota",
+  "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada",
+  "New Hampshire", "New Jersey", "New Mexico", "New York",
+  "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon",
+  "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota",
+  "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington",
+  "West Virginia", "Wisconsin", "Wyoming", "District of Columbia",
+];
+
 const EMPTY = {
   name: "",
   investor_type: "",
   client_id: "",
   tax_number: "",
   address: "",
+  state: "",
 };
 
 export function InvestorForm({ investors, clients, onSaved }: InvestorFormProps) {
@@ -39,6 +53,7 @@ export function InvestorForm({ investors, clients, onSaved }: InvestorFormProps)
           client_id: String(inv.client_id ?? ""),
           tax_number: inv.tax_number ?? "",
           address: inv.address ?? "",
+          state: inv.state ?? "",
         });
       }
     }
@@ -72,6 +87,7 @@ export function InvestorForm({ investors, clients, onSaved }: InvestorFormProps)
       client_id: parseInt(fields.client_id),
       tax_number: fields.tax_number.trim() || null,
       address: fields.address.trim() || null,
+      state: fields.state.trim() || null,
     };
 
     if (selectedId === "new") {
@@ -109,6 +125,7 @@ export function InvestorForm({ investors, clients, onSaved }: InvestorFormProps)
           client_id: payload.client_id,
           tax_number: payload.tax_number ?? "",
           address: payload.address ?? "",
+          state: payload.state ?? "",
         };
         onSaved(updated);
         setSuccess(true);
@@ -212,6 +229,22 @@ export function InvestorForm({ investors, clients, onSaved }: InvestorFormProps)
                 placeholder="XX-XXXXXXX"
                 className="h-9 w-full border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                State of Formation
+              </label>
+              <select
+                value={fields.state}
+                onChange={(e) => set("state", e.target.value)}
+                className="h-9 w-full border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="">Select state…</option>
+                {US_STATES.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
             </div>
           </div>
 

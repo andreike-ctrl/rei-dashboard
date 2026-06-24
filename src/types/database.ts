@@ -14,6 +14,7 @@ export interface Investor {
   client_id: number;
   tax_number: string;
   address: string;
+  state: string;
 }
 
 export interface Property {

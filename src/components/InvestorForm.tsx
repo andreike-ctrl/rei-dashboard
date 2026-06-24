@@ -10,7 +10,7 @@ interface InvestorFormProps {
   onSaved: (investor: Investor) => void;
 }
 
-const INVESTOR_TYPES = ["Individual", "Joint", "Entity", "Trust", "LP", "LLC"];
+const INVESTOR_TYPES = ["Individual", "Joint", "Entity", "Trust", "LP", "LLC", "C Corp"];
 
 const US_STATES = [
   "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado",

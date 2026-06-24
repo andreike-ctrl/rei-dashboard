@@ -15,6 +15,9 @@ export interface Investor {
   tax_number: string;
   address: string;
   state: string;
+  annual_filings: string | null;
+  annual_taxes: string | null;
+  entity_number: string | null;
 }
 
 export interface Property {

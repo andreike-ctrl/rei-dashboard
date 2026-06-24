@@ -25,13 +25,18 @@ const US_STATES = [
   "West Virginia", "Wisconsin", "Wyoming", "District of Columbia",
 ];
 
+const RESPONSIBILITY_OPTIONS = ["N/A", "Client", "Veo 3"];
+
 const EMPTY = {
   name: "",
   investor_type: "",
   client_id: "",
   tax_number: "",
+  entity_number: "",
   address: "",
   state: "",
+  annual_filings: "",
+  annual_taxes: "",
 };
 
 export function InvestorForm({ investors, clients, onSaved }: InvestorFormProps) {
@@ -52,8 +57,11 @@ export function InvestorForm({ investors, clients, onSaved }: InvestorFormProps)
           investor_type: inv.investor_type ?? "",
           client_id: String(inv.client_id ?? ""),
           tax_number: inv.tax_number ?? "",
+          entity_number: inv.entity_number ?? "",
           address: inv.address ?? "",
           state: inv.state ?? "",
+          annual_filings: inv.annual_filings ?? "",
+          annual_taxes: inv.annual_taxes ?? "",
         });
       }
     }
@@ -86,8 +94,11 @@ export function InvestorForm({ investors, clients, onSaved }: InvestorFormProps)
       investor_type: fields.investor_type.trim() || null,
       client_id: parseInt(fields.client_id),
       tax_number: fields.tax_number.trim() || null,
+      entity_number: fields.entity_number.trim() || null,
       address: fields.address.trim() || null,
       state: fields.state.trim() || null,
+      annual_filings: fields.annual_filings || null,
+      annual_taxes: fields.annual_taxes || null,
     };
 
     if (selectedId === "new") {
@@ -124,8 +135,11 @@ export function InvestorForm({ investors, clients, onSaved }: InvestorFormProps)
           investor_type: payload.investor_type ?? "",
           client_id: payload.client_id,
           tax_number: payload.tax_number ?? "",
+          entity_number: payload.entity_number ?? null,
           address: payload.address ?? "",
           state: payload.state ?? "",
+          annual_filings: payload.annual_filings ?? null,
+          annual_taxes: payload.annual_taxes ?? null,
         };
         onSaved(updated);
         setSuccess(true);
@@ -233,6 +247,19 @@ export function InvestorForm({ investors, clients, onSaved }: InvestorFormProps)
 
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Business Entity Number
+              </label>
+              <input
+                type="text"
+                value={fields.entity_number}
+                onChange={(e) => set("entity_number", e.target.value)}
+                placeholder="e.g. L12345678901"
+                className="h-9 w-full border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 State of Formation
               </label>
               <select
@@ -259,6 +286,46 @@ export function InvestorForm({ investors, clients, onSaved }: InvestorFormProps)
               placeholder="Street, City, State ZIP"
               className="h-9 w-full border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
+          </div>
+
+          {/* Responsibility */}
+          <div className="border-t border-border pt-4">
+            <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Responsibility
+            </p>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Annual Filings
+                </label>
+                <select
+                  value={fields.annual_filings}
+                  onChange={(e) => set("annual_filings", e.target.value)}
+                  className="h-9 w-full border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <option value="">Not set</option>
+                  {RESPONSIBILITY_OPTIONS.map((o) => (
+                    <option key={o} value={o}>{o}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Annual Taxes
+                </label>
+                <select
+                  value={fields.annual_taxes}
+                  onChange={(e) => set("annual_taxes", e.target.value)}
+                  className="h-9 w-full border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <option value="">Not set</option>
+                  {RESPONSIBILITY_OPTIONS.map((o) => (
+                    <option key={o} value={o}>{o}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
 
           {error && (

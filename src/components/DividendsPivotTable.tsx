@@ -45,13 +45,14 @@ export function DividendsPivotTable({
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([sortKey, label]) => ({ sortKey, label }));
 
-      // Sort properties by name
+      // Sort properties by investment date ascending (oldest first)
       const sortedProps = Array.from(propIds)
         .map((id) => ({
           id,
           name: propertyMap.get(id)?.name ?? `Property #${id}`,
+          investmentDate: propertyMap.get(id)?.investment_date ?? "",
         }))
-        .sort((a, b) => a.name.localeCompare(b.name));
+        .sort((a, b) => a.investmentDate.localeCompare(b.investmentDate));
 
       // Compute row totals
       const rowTotals = new Map<number, number>();

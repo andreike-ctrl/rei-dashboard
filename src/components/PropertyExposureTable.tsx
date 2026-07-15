@@ -235,9 +235,10 @@ export function PropertyExposureTable({
                           : invested <= fiveYearsAgo
                           ? "text-amber-500 dark:text-amber-400"
                           : "text-muted-foreground";
+                        const vintage = invested.toLocaleString("en-US", { month: "short", year: "numeric" });
                         return (
                           <span className={`ml-1.5 font-normal ${color}`}>
-                            ({invested.getFullYear()})
+                            ({vintage})
                           </span>
                         );
                       })()}

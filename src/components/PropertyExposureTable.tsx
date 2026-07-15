@@ -177,7 +177,13 @@ export function PropertyExposureTable({
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Property Exposure</CardTitle>
+        <div className="flex flex-col gap-1.5">
+          <CardTitle>Property Exposure</CardTitle>
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-full bg-amber-500" /> 5–6 years</span>
+            <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-full bg-green-600" /> 6+ years</span>
+          </div>
+        </div>
         <button onClick={handleDownload} className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-secondary/60 transition-colors border border-border">
           <Download className="h-3.5 w-3.5" /> CSV
         </button>

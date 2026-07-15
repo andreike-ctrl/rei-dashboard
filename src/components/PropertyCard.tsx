@@ -41,7 +41,14 @@ export function PropertyCard({ property }: PropertyCardProps) {
                   <MapPin className="h-3.5 w-3.5" />
                   {property.msa}, {property.state}
                 </span>
-                <span className="flex items-center gap-1">
+                <span className={`flex items-center gap-1 ${
+                  (() => {
+                    const invested = new Date(property.investment_date);
+                    const sixYearsAgo = new Date();
+                    sixYearsAgo.setFullYear(sixYearsAgo.getFullYear() - 6);
+                    return invested <= sixYearsAgo ? "text-green-600 dark:text-green-400" : "";
+                  })()
+                }`}>
                   <Calendar className="h-3.5 w-3.5" />
                   {formatDate(property.investment_date)}
                 </span>

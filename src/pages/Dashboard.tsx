@@ -35,7 +35,7 @@ export function Dashboard() {
       const { data: props, error: propErr } = await supabase
         .from("properties")
         .select("*")
-        .order("name");
+        .order("investment_date", { ascending: true });
 
       if (propErr) {
         setError(propErr.message);

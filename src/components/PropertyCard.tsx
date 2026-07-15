@@ -44,9 +44,12 @@ export function PropertyCard({ property }: PropertyCardProps) {
                 <span className={`flex items-center gap-1 ${
                   (() => {
                     const invested = new Date(property.investment_date);
-                    const sixYearsAgo = new Date();
-                    sixYearsAgo.setFullYear(sixYearsAgo.getFullYear() - 6);
-                    return invested <= sixYearsAgo ? "text-green-600 dark:text-green-400" : "";
+                    const now = new Date();
+                    const sixYearsAgo = new Date(now); sixYearsAgo.setFullYear(now.getFullYear() - 6);
+                    const fiveYearsAgo = new Date(now); fiveYearsAgo.setFullYear(now.getFullYear() - 5);
+                    if (invested <= sixYearsAgo) return "text-green-600 dark:text-green-400";
+                    if (invested <= fiveYearsAgo) return "text-amber-500 dark:text-amber-400";
+                    return "";
                   })()
                 }`}>
                   <Calendar className="h-3.5 w-3.5" />

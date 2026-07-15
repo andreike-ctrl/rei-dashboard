@@ -227,11 +227,16 @@ export function PropertyExposureTable({
                       {row.propertyName}
                       {row.investmentDate && (() => {
                         const invested = new Date(row.investmentDate);
-                        const sixYearsAgo = new Date();
-                        sixYearsAgo.setFullYear(sixYearsAgo.getFullYear() - 6);
-                        const isMatured = invested <= sixYearsAgo;
+                        const now = new Date();
+                        const sixYearsAgo = new Date(now); sixYearsAgo.setFullYear(now.getFullYear() - 6);
+                        const fiveYearsAgo = new Date(now); fiveYearsAgo.setFullYear(now.getFullYear() - 5);
+                        const color = invested <= sixYearsAgo
+                          ? "text-green-600 dark:text-green-400"
+                          : invested <= fiveYearsAgo
+                          ? "text-amber-500 dark:text-amber-400"
+                          : "text-muted-foreground";
                         return (
-                          <span className={`ml-1.5 font-normal ${isMatured ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}`}>
+                          <span className={`ml-1.5 font-normal ${color}`}>
                             ({invested.getFullYear()})
                           </span>
                         );

@@ -26,6 +26,7 @@ interface PropertyExposureTableProps {
 interface ExposureRow {
   propertyId: number;
   propertyName: string;
+  investmentDate: string | null;
   ownershipPercent: number;
   capitalInvested: number;
   currentNav: number;
@@ -98,6 +99,7 @@ export function PropertyExposureTable({
       result.push({
         propertyId: propId,
         propertyName: prop?.name ?? `Property #${propId}`,
+        investmentDate: prop?.investment_date ?? null,
         ownershipPercent:
           unitsOutstanding > 0 ? entry.units / unitsOutstanding : 0,
         capitalInvested: entry.capitalInvested,
@@ -109,7 +111,12 @@ export function PropertyExposureTable({
       });
     }
 
-    result.sort((a, b) => b.currentNav - a.currentNav);
+    result.sort((a, b) => {
+      if (!a.investmentDate && !b.investmentDate) return 0;
+      if (!a.investmentDate) return 1;
+      if (!b.investmentDate) return -1;
+      return a.investmentDate.localeCompare(b.investmentDate);
+    });
 
     const totalCapital = result.reduce((s, r) => s + r.capitalInvested, 0);
     const totalNav = result.reduce((s, r) => s + r.currentNav, 0);
@@ -218,6 +225,17 @@ export function PropertyExposureTable({
                       className="hover:underline"
                     >
                       {row.propertyName}
+                      {row.investmentDate && (() => {
+                        const invested = new Date(row.investmentDate);
+                        const sixYearsAgo = new Date();
+                        sixYearsAgo.setFullYear(sixYearsAgo.getFullYear() - 6);
+                        const isMatured = invested <= sixYearsAgo;
+                        return (
+                          <span className={`ml-1.5 font-normal ${isMatured ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}`}>
+                            ({invested.getFullYear()})
+                          </span>
+                        );
+                      })()}
                     </Link>
                   </td>
                   <td className="py-3 pr-4 text-right tabular-nums text-foreground">

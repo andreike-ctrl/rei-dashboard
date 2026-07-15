@@ -180,7 +180,7 @@ export function PropertyExposureTable({
         <div className="flex flex-col gap-1.5">
           <CardTitle>Property Exposure</CardTitle>
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-full bg-amber-500" /> 5–6 years</span>
+            <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-full bg-blue-800" /> 5–6 years</span>
             <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-full bg-green-600" /> 6+ years</span>
           </div>
         </div>
@@ -239,7 +239,7 @@ export function PropertyExposureTable({
                         const color = invested <= sixYearsAgo
                           ? "text-green-600 dark:text-green-400"
                           : invested <= fiveYearsAgo
-                          ? "text-amber-500 dark:text-amber-400"
+                          ? "text-blue-800 dark:text-blue-400"
                           : "text-muted-foreground";
                         const vintage = invested.toLocaleString("en-US", { month: "short", year: "numeric" });
                         return (

@@ -48,7 +48,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
                     const sixYearsAgo = new Date(now); sixYearsAgo.setFullYear(now.getFullYear() - 6);
                     const fiveYearsAgo = new Date(now); fiveYearsAgo.setFullYear(now.getFullYear() - 5);
                     if (invested <= sixYearsAgo) return "text-green-600 dark:text-green-400";
-                    if (invested <= fiveYearsAgo) return "text-amber-500 dark:text-amber-400";
+                    if (invested <= fiveYearsAgo) return "text-blue-800 dark:text-blue-400";
                     return "";
                   })()
                 }`}>

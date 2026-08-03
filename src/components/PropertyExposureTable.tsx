@@ -4,6 +4,7 @@ import { Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { formatCurrency, formatMultiple } from "@/lib/format";
 import { downloadCsv } from "@/lib/csv";
+import { isDistribution } from "@/lib/transactionTypes";
 import type { Transaction, Investor, Property, Valuation } from "@/types/database";
 
 const FUNDING_TYPES = new Set(["Capital Call", "Funding", "Purchase"]);
@@ -71,10 +72,10 @@ export function PropertyExposureTable({
 
       if (FUNDING_TYPES.has(t.type)) {
         entry.capitalInvested += -t.cash_amount;
-      } else if (t.type === "Distribution") {
+      } else if (isDistribution(t.type)) {
         entry.dividends += t.cash_amount;
       } else {
-        // Sale, Refi, or any other non-funding/non-distribution cash flow
+        // Sale, or any other non-funding/non-distribution cash flow
         entry.otherProceeds += t.cash_amount;
       }
 

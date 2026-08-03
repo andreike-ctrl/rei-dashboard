@@ -6,6 +6,7 @@ import { PortfolioSummary } from "@/components/PortfolioSummary";
 import { Spinner } from "@/components/ui/Spinner";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { downloadCsv } from "@/lib/csv";
+import { isDistribution } from "@/lib/transactionTypes";
 import type { Property, PropertyWithNav, Valuation, Transaction, PropertyLocation } from "@/types/database";
 
 /** Transaction types that represent funding / capital raised */
@@ -204,16 +205,16 @@ export function Dashboard() {
   const totalDividends = useMemo(
     () =>
       filteredTransactions
-        .filter((t) => t.type === "Distribution")
+        .filter((t) => isDistribution(t.type))
         .reduce((sum, t) => sum + t.cash_amount, 0),
     [filteredTransactions]
   );
 
-  // Total other proceeds (sales, refis, etc.)
+  // Total other proceeds (sales, etc.)
   const totalOtherProceeds = useMemo(
     () =>
       filteredTransactions
-        .filter((t) => !FUNDING_TYPES.has(t.type) && t.type !== "Distribution")
+        .filter((t) => !FUNDING_TYPES.has(t.type) && !isDistribution(t.type))
         .reduce((sum, t) => sum + t.cash_amount, 0),
     [filteredTransactions]
   );

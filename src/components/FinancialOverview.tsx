@@ -5,6 +5,7 @@ import {
   formatMultiple,
 } from "@/lib/format";
 import { xirr } from "@/lib/xirr";
+import { isDistribution } from "@/lib/transactionTypes";
 import type { Property, Transaction, Valuation } from "@/types/database";
 
 interface FinancialOverviewProps {
@@ -22,12 +23,12 @@ export function FinancialOverview({
 }: FinancialOverviewProps) {
   // Sum distributions paid to date
   const distributionsPaid = transactions
-    .filter((t) => t.type === "Distribution")
+    .filter((t) => isDistribution(t.type))
     .reduce((sum, t) => sum + t.cash_amount, 0);
 
   // Other proceeds (everything that's not funding and not distribution)
   const otherProceeds = transactions
-    .filter((t) => !FUNDING_TYPES.has(t.type) && t.type !== "Distribution")
+    .filter((t) => !FUNDING_TYPES.has(t.type) && !isDistribution(t.type))
     .reduce((sum, t) => sum + t.cash_amount, 0);
 
   // Current NAV = latest valuation (valuations are ordered ascending by date)

@@ -9,6 +9,7 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { formatCurrency } from "@/lib/format";
+import { isDistribution } from "@/lib/transactionTypes";
 import type { Transaction } from "@/types/database";
 
 interface DividendsChartProps {
@@ -19,9 +20,14 @@ interface DividendsChartProps {
 interface ChartDataPoint {
   label: string;
   sortKey: string;
+  distributionAmount: number;
+  refiAmount: number;
   amount: number;
   yield?: number;
 }
+
+const DISTRIBUTION_COLOR = "#1e40af";
+const REFI_COLOR = "#7c3aed";
 
 function formatHalf(dateStr: string): { label: string; sortKey: string } {
   const date = new Date(dateStr + "T00:00:00");
@@ -31,23 +37,32 @@ function formatHalf(dateStr: string): { label: string; sortKey: string } {
 }
 
 function buildHalfYearDividends(transactions: Transaction[]): ChartDataPoint[] {
-  const dividends = transactions.filter((t) => t.type === "Distribution");
+  const dividends = transactions.filter((t) => isDistribution(t.type));
 
-  const byHalf = new Map<string, { label: string; sortKey: string; amount: number }>();
+  const byHalf = new Map<
+    string,
+    { label: string; sortKey: string; distributionAmount: number; refiAmount: number }
+  >();
 
   for (const t of dividends) {
     const { label, sortKey } = formatHalf(t.date);
-    const existing = byHalf.get(sortKey);
-    if (existing) {
-      existing.amount += t.cash_amount;
+    const existing = byHalf.get(sortKey) ?? {
+      label,
+      sortKey,
+      distributionAmount: 0,
+      refiAmount: 0,
+    };
+    if (t.type === "Refi") {
+      existing.refiAmount += t.cash_amount;
     } else {
-      byHalf.set(sortKey, { label, sortKey, amount: t.cash_amount });
+      existing.distributionAmount += t.cash_amount;
     }
+    byHalf.set(sortKey, existing);
   }
 
-  return Array.from(byHalf.values()).sort((a, b) =>
-    a.sortKey.localeCompare(b.sortKey)
-  );
+  return Array.from(byHalf.values())
+    .sort((a, b) => a.sortKey.localeCompare(b.sortKey))
+    .map((d) => ({ ...d, amount: d.distributionAmount + d.refiAmount }));
 }
 
 function formatYAxisTick(value: number): string {
@@ -61,6 +76,8 @@ export function DividendsChart({ transactions, vo2Raise }: DividendsChartProps) 
     ...d,
     yield: vo2Raise ? d.amount / vo2Raise : undefined,
   }));
+
+  const hasRefi = data.some((d) => d.refiAmount !== 0);
 
   if (data.length === 0) {
     return (
@@ -79,8 +96,26 @@ export function DividendsChart({ transactions, vo2Raise }: DividendsChartProps) 
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Distributions Over Time</CardTitle>
+        {hasRefi && (
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <span
+                className="inline-block h-2 w-2 rounded-full"
+                style={{ backgroundColor: DISTRIBUTION_COLOR }}
+              />
+              Distribution
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span
+                className="inline-block h-2 w-2 rounded-full"
+                style={{ backgroundColor: REFI_COLOR }}
+              />
+              Refi
+            </span>
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         <div className="h-[300px] w-full">
@@ -115,6 +150,16 @@ export function DividendsChart({ transactions, vo2Raise }: DividendsChartProps) 
                       <p className="text-sm font-semibold text-foreground">
                         {formatCurrency(point.amount)}
                       </p>
+                      {hasRefi && (
+                        <>
+                          <p className="text-xs text-muted-foreground">
+                            Distribution: {formatCurrency(point.distributionAmount)}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Refi: {formatCurrency(point.refiAmount)}
+                          </p>
+                        </>
+                      )}
                       {point.yield != null && (
                         <p className="text-xs text-muted-foreground">
                           Dist / Raise: {(point.yield * 100).toFixed(2)}%
@@ -125,8 +170,16 @@ export function DividendsChart({ transactions, vo2Raise }: DividendsChartProps) 
                 }}
               />
               <Bar
-                dataKey="amount"
-                fill="#1e40af"
+                dataKey="distributionAmount"
+                stackId="dist"
+                fill={DISTRIBUTION_COLOR}
+                radius={0}
+                maxBarSize={48}
+              />
+              <Bar
+                dataKey="refiAmount"
+                stackId="dist"
+                fill={REFI_COLOR}
                 radius={0}
                 maxBarSize={48}
               />

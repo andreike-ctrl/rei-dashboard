@@ -3,6 +3,7 @@ import { Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { formatCurrency } from "@/lib/format";
 import { downloadCsv } from "@/lib/csv";
+import { isDistribution } from "@/lib/transactionTypes";
 import type { Transaction, Property } from "@/types/database";
 
 interface DividendsPivotTableProps {
@@ -24,7 +25,7 @@ export function DividendsPivotTable({
   const { propertyRows, halfColumns, cellMap, propertyTotals, columnTotals, grandTotal } =
     useMemo(() => {
       const propertyMap = new Map(properties.map((p) => [p.property_id, p]));
-      const dividends = transactions.filter((t) => t.type === "Distribution");
+      const dividends = transactions.filter((t) => isDistribution(t.type));
 
       // Collect all half-year periods and build cell map
       const halves = new Map<string, string>(); // sortKey -> label

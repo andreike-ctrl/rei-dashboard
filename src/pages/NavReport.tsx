@@ -4,6 +4,7 @@ import { Download } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { NavReportPDF } from "@/components/NavReportPDF";
 import { Spinner } from "@/components/ui/Spinner";
+import { isDistribution } from "@/lib/transactionTypes";
 import type { Client, Investor, Transaction, Valuation, Property } from "@/types/database";
 import type { NavSnapshot } from "@/components/NavReportPDF";
 
@@ -117,7 +118,7 @@ export function NavReport() {
     for (const t of clientTxns) {
       if (t.units != null) unitsByProp.set(t.property_id, (unitsByProp.get(t.property_id) ?? 0) + t.units);
       if (FUNDING.has(t.type)) capitalByProp.set(t.property_id, (capitalByProp.get(t.property_id) ?? 0) + Math.abs(t.cash_amount));
-      else if (t.type === "Distribution") distByProp.set(t.property_id, (distByProp.get(t.property_id) ?? 0) + t.cash_amount);
+      else if (isDistribution(t.type)) distByProp.set(t.property_id, (distByProp.get(t.property_id) ?? 0) + t.cash_amount);
       else otherProceedsByProp.set(t.property_id, (otherProceedsByProp.get(t.property_id) ?? 0) + t.cash_amount);
     }
 

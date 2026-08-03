@@ -13,6 +13,7 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { Spinner } from "@/components/ui/Spinner";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { formatCurrency, formatMultiple } from "@/lib/format";
+import { isDistribution } from "@/lib/transactionTypes";
 import type {
   Client,
   Investor,
@@ -158,7 +159,7 @@ export function ClientDetail() {
     for (const t of transactions) {
       if (FUNDING_TYPES.has(t.type)) {
         capitalInvested += -t.cash_amount;
-      } else if (t.type === "Distribution") {
+      } else if (isDistribution(t.type)) {
         dividends += t.cash_amount;
       } else {
         otherProceeds += t.cash_amount;

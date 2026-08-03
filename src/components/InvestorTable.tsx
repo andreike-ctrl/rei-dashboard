@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { formatCurrency, formatMultiple } from "@/lib/format";
+import { isDistribution } from "@/lib/transactionTypes";
 import type { Transaction, Investor } from "@/types/database";
 
 const FUNDING_TYPES = new Set(["Capital Call", "Funding", "Purchase"]);
@@ -53,7 +54,7 @@ export function InvestorTable({
         .reduce((sum, t) => sum + t.cash_amount, 0);
 
       const dividends = txns
-        .filter((t) => t.type === "Distribution")
+        .filter((t) => isDistribution(t.type))
         .reduce((sum, t) => sum + t.cash_amount, 0);
 
       const unitsByProperty = new Map<number, number>();

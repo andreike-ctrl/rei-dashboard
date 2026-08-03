@@ -22,12 +22,14 @@ interface ChartDataPoint {
   sortKey: string;
   distributionAmount: number;
   refiAmount: number;
+  returnOfCapitalAmount: number;
   amount: number;
   yield?: number;
 }
 
 const DISTRIBUTION_COLOR = "#1e40af";
 const REFI_COLOR = "#7c3aed";
+const RETURN_OF_CAPITAL_COLOR = "#0d9488";
 
 function formatHalf(dateStr: string): { label: string; sortKey: string } {
   const date = new Date(dateStr + "T00:00:00");
@@ -41,7 +43,13 @@ function buildHalfYearDividends(transactions: Transaction[]): ChartDataPoint[] {
 
   const byHalf = new Map<
     string,
-    { label: string; sortKey: string; distributionAmount: number; refiAmount: number }
+    {
+      label: string;
+      sortKey: string;
+      distributionAmount: number;
+      refiAmount: number;
+      returnOfCapitalAmount: number;
+    }
   >();
 
   for (const t of dividends) {
@@ -51,9 +59,12 @@ function buildHalfYearDividends(transactions: Transaction[]): ChartDataPoint[] {
       sortKey,
       distributionAmount: 0,
       refiAmount: 0,
+      returnOfCapitalAmount: 0,
     };
     if (t.type === "Refi") {
       existing.refiAmount += t.cash_amount;
+    } else if (t.type === "Return of Capital") {
+      existing.returnOfCapitalAmount += t.cash_amount;
     } else {
       existing.distributionAmount += t.cash_amount;
     }
@@ -62,7 +73,10 @@ function buildHalfYearDividends(transactions: Transaction[]): ChartDataPoint[] {
 
   return Array.from(byHalf.values())
     .sort((a, b) => a.sortKey.localeCompare(b.sortKey))
-    .map((d) => ({ ...d, amount: d.distributionAmount + d.refiAmount }));
+    .map((d) => ({
+      ...d,
+      amount: d.distributionAmount + d.refiAmount + d.returnOfCapitalAmount,
+    }));
 }
 
 function formatYAxisTick(value: number): string {
@@ -78,6 +92,8 @@ export function DividendsChart({ transactions, vo2Raise }: DividendsChartProps) 
   }));
 
   const hasRefi = data.some((d) => d.refiAmount !== 0);
+  const hasReturnOfCapital = data.some((d) => d.returnOfCapitalAmount !== 0);
+  const hasBreakdown = hasRefi || hasReturnOfCapital;
 
   if (data.length === 0) {
     return (
@@ -98,7 +114,7 @@ export function DividendsChart({ transactions, vo2Raise }: DividendsChartProps) 
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Distributions Over Time</CardTitle>
-        {hasRefi && (
+        {hasBreakdown && (
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <span className="flex items-center gap-1.5">
               <span
@@ -107,13 +123,24 @@ export function DividendsChart({ transactions, vo2Raise }: DividendsChartProps) 
               />
               Distribution
             </span>
-            <span className="flex items-center gap-1.5">
-              <span
-                className="inline-block h-2 w-2 rounded-full"
-                style={{ backgroundColor: REFI_COLOR }}
-              />
-              Refi
-            </span>
+            {hasRefi && (
+              <span className="flex items-center gap-1.5">
+                <span
+                  className="inline-block h-2 w-2 rounded-full"
+                  style={{ backgroundColor: REFI_COLOR }}
+                />
+                Refi
+              </span>
+            )}
+            {hasReturnOfCapital && (
+              <span className="flex items-center gap-1.5">
+                <span
+                  className="inline-block h-2 w-2 rounded-full"
+                  style={{ backgroundColor: RETURN_OF_CAPITAL_COLOR }}
+                />
+                Return of Capital
+              </span>
+            )}
           </div>
         )}
       </CardHeader>
@@ -150,14 +177,21 @@ export function DividendsChart({ transactions, vo2Raise }: DividendsChartProps) 
                       <p className="text-sm font-semibold text-foreground">
                         {formatCurrency(point.amount)}
                       </p>
-                      {hasRefi && (
+                      {hasBreakdown && (
                         <>
                           <p className="text-xs text-muted-foreground">
                             Distribution: {formatCurrency(point.distributionAmount)}
                           </p>
-                          <p className="text-xs text-muted-foreground">
-                            Refi: {formatCurrency(point.refiAmount)}
-                          </p>
+                          {hasRefi && (
+                            <p className="text-xs text-muted-foreground">
+                              Refi: {formatCurrency(point.refiAmount)}
+                            </p>
+                          )}
+                          {hasReturnOfCapital && (
+                            <p className="text-xs text-muted-foreground">
+                              Return of Capital: {formatCurrency(point.returnOfCapitalAmount)}
+                            </p>
+                          )}
                         </>
                       )}
                       {point.yield != null && (
@@ -180,6 +214,13 @@ export function DividendsChart({ transactions, vo2Raise }: DividendsChartProps) 
                 dataKey="refiAmount"
                 stackId="dist"
                 fill={REFI_COLOR}
+                radius={0}
+                maxBarSize={48}
+              />
+              <Bar
+                dataKey="returnOfCapitalAmount"
+                stackId="dist"
+                fill={RETURN_OF_CAPITAL_COLOR}
                 radius={0}
                 maxBarSize={48}
               />

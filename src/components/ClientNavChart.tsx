@@ -3,7 +3,6 @@ import {
   ResponsiveContainer,
   AreaChart,
   Area,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -174,12 +173,30 @@ export function ClientNavChart({
                   <stop
                     offset="5%"
                     stopColor="#1e40af"
-                    stopOpacity={0.15}
+                    stopOpacity={0.35}
                   />
                   <stop
                     offset="95%"
                     stopColor="#1e40af"
-                    stopOpacity={0}
+                    stopOpacity={0.1}
+                  />
+                </linearGradient>
+                <linearGradient
+                  id="clientCashReceivedGradient"
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
+                  <stop
+                    offset="5%"
+                    stopColor={CASH_RECEIVED_COLOR}
+                    stopOpacity={0.35}
+                  />
+                  <stop
+                    offset="95%"
+                    stopColor={CASH_RECEIVED_COLOR}
+                    stopOpacity={0.1}
                   />
                 </linearGradient>
               </defs>
@@ -207,6 +224,9 @@ export function ClientNavChart({
                         {point.label}
                       </p>
                       <p className="text-sm font-semibold text-foreground">
+                        Total: {formatCurrency(point.nav + point.cumulativeCashReceived)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
                         NAV: {formatCurrency(point.nav)}
                       </p>
                       <p className="text-xs" style={{ color: CASH_RECEIVED_COLOR }}>
@@ -219,17 +239,20 @@ export function ClientNavChart({
               <Area
                 type="monotone"
                 dataKey="nav"
+                stackId="value"
                 stroke="#1e40af"
                 strokeWidth={2}
                 fill="url(#clientNavGradient)"
                 dot={{ r: 3, fill: "#1e40af" }}
                 activeDot={{ r: 5, fill: "#1e40af" }}
               />
-              <Line
+              <Area
                 type="monotone"
                 dataKey="cumulativeCashReceived"
+                stackId="value"
                 stroke={CASH_RECEIVED_COLOR}
                 strokeWidth={2}
+                fill="url(#clientCashReceivedGradient)"
                 dot={{ r: 3, fill: CASH_RECEIVED_COLOR }}
                 activeDot={{ r: 5, fill: CASH_RECEIVED_COLOR }}
               />

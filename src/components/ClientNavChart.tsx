@@ -3,6 +3,7 @@ import {
   ResponsiveContainer,
   AreaChart,
   Area,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -21,6 +22,9 @@ const UNIT_TRANSACTION_TYPES = new Set([
   "Distribution",
 ]);
 
+const FUNDING_TYPES = new Set(["Capital Call", "Funding", "Purchase"]);
+const CASH_RECEIVED_COLOR = "#059669";
+
 interface ClientNavChartProps {
   transactions: Transaction[];
   valuations: Valuation[];
@@ -30,6 +34,7 @@ interface ChartDataPoint {
   label: string;
   sortKey: string;
   nav: number;
+  cumulativeCashReceived: number;
 }
 
 function formatYAxisTick(value: number): string {
@@ -48,6 +53,12 @@ export function ClientNavChart({
     // Sort transactions by date to compute cumulative units over time
     const unitTxns = transactions
       .filter((t) => UNIT_TRANSACTION_TYPES.has(t.type) && t.units != null)
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    // Cash paid out to the investor (distributions, refis, return of capital, sale/exit
+    // proceeds, etc.) — everything that isn't a capital contribution.
+    const cashReceivedTxns = transactions
+      .filter((t) => !FUNDING_TYPES.has(t.type))
       .sort((a, b) => a.date.localeCompare(b.date));
 
     // Group valuations by quarter, keeping the last valuation per property per quarter
@@ -99,10 +110,17 @@ export function ClientNavChart({
         totalNav += units * (runningNavPerUnit.get(propId) ?? 0);
       }
 
+      // Cumulative cash received up to this quarter's end date
+      let cumulativeCashReceived = 0;
+      for (const t of cashReceivedTxns) {
+        if (t.date > endDate) break;
+        cumulativeCashReceived += t.cash_amount;
+      }
+
       const match = qLabel.match(/Q(\d) (\d{4})/);
       const sortKey = match ? `${match[2]}-${match[1]}` : qLabel;
 
-      points.push({ label: qLabel, sortKey, nav: totalNav });
+      points.push({ label: qLabel, sortKey, nav: totalNav, cumulativeCashReceived });
     }
 
     return points.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
@@ -125,8 +143,18 @@ export function ClientNavChart({
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>NAV Over Time</CardTitle>
+        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: "#1e40af" }} />
+            NAV
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: CASH_RECEIVED_COLOR }} />
+            Cumulative Cash Received
+          </span>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="h-[300px] w-full">
@@ -179,7 +207,10 @@ export function ClientNavChart({
                         {point.label}
                       </p>
                       <p className="text-sm font-semibold text-foreground">
-                        {formatCurrency(point.nav)}
+                        NAV: {formatCurrency(point.nav)}
+                      </p>
+                      <p className="text-xs" style={{ color: CASH_RECEIVED_COLOR }}>
+                        Cumulative Cash Received: {formatCurrency(point.cumulativeCashReceived)}
                       </p>
                     </div>
                   );
@@ -193,6 +224,14 @@ export function ClientNavChart({
                 fill="url(#clientNavGradient)"
                 dot={{ r: 3, fill: "#1e40af" }}
                 activeDot={{ r: 5, fill: "#1e40af" }}
+              />
+              <Line
+                type="monotone"
+                dataKey="cumulativeCashReceived"
+                stroke={CASH_RECEIVED_COLOR}
+                strokeWidth={2}
+                dot={{ r: 3, fill: CASH_RECEIVED_COLOR }}
+                activeDot={{ r: 5, fill: CASH_RECEIVED_COLOR }}
               />
             </AreaChart>
           </ResponsiveContainer>

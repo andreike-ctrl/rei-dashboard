@@ -277,7 +277,7 @@ function staticMapUrl(locs: { lat: number; lon: number; color: string }[]): stri
 // Donut chart built from raw SVG arcs (react-pdf has no charting primitives of its own).
 function DonutChart({ data }: { data: { name: string; value: number; color: string }[] }) {
   const total = data.reduce((sum, d) => sum + d.value, 0);
-  const cx = 55, cy = 55, outerR = 50, innerR = 30;
+  const cx = 32, cy = 32, outerR = 29, innerR = 17;
 
   const slices = data.map((d, i) => {
     const before = data.slice(0, i).reduce((sum, x) => sum + x.value, 0);
@@ -299,23 +299,23 @@ function DonutChart({ data }: { data: { name: string; value: number; color: stri
   });
 
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 20 }}>
-      <Svg width={110} height={110} viewBox="0 0 110 110">
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+      <Svg width={64} height={64} viewBox="0 0 64 64">
         {slices.map((slice) => (
           <Path key={slice.name} d={slice.path} fill={slice.color} fillRule="evenodd" />
         ))}
       </Svg>
-      <View style={{ gap: 8 }}>
+      <View style={{ gap: 6 }}>
         {data.map((d) => {
           const pct = total > 0 ? (d.value / total) * 100 : 0;
           return (
-            <View key={d.name} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-              <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: d.color }} />
-              <Text style={{ fontSize: 8.5, color: C.gray800, width: 80 }}>{d.name}</Text>
-              <Text style={{ fontSize: 8.5, fontFamily: "Helvetica-Bold", color: C.gray800, width: 32, textAlign: "right" }}>
+            <View key={d.name} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: d.color }} />
+              <Text style={{ fontSize: 7.5, color: C.gray800, width: 76 }}>{d.name}</Text>
+              <Text style={{ fontSize: 7.5, fontFamily: "Helvetica-Bold", color: C.gray800, width: 26, textAlign: "right" }}>
                 {pct.toFixed(0)}%
               </Text>
-              <Text style={{ fontSize: 8.5, color: C.gray600, width: 62, textAlign: "right" }}>
+              <Text style={{ fontSize: 7.5, color: C.gray600, width: 50, textAlign: "right" }}>
                 {fmtCurrency(d.value)}
               </Text>
             </View>
@@ -372,6 +372,15 @@ export function NavReportPDF({ client, investors: _investors, period, snapshot, 
     navByClass.set(assetClass, (navByClass.get(assetClass) ?? 0) + (row.nav ?? 0));
   }
   const pieData = Array.from(navByClass.entries())
+    .map(([name, value], i) => ({ name, value, color: classColor(name, i) }))
+    .sort((a, b) => b.value - a.value);
+
+  const navByState = new Map<string, number>();
+  for (const row of holdings) {
+    const state = row.property.state || "Other";
+    navByState.set(state, (navByState.get(state) ?? 0) + (row.nav ?? 0));
+  }
+  const statePieData = Array.from(navByState.entries())
     .map(([name, value], i) => ({ name, value, color: classColor(name, i) }))
     .sort((a, b) => b.value - a.value);
 
@@ -550,14 +559,24 @@ export function NavReportPDF({ client, investors: _investors, period, snapshot, 
               )}
             </View>
 
-            {/* ── NAV Exposure by Type ── */}
-            <View style={s.section}>
-              <SectionTitle>NAV Exposure by Type</SectionTitle>
-              {pieData.length > 0 ? (
-                <DonutChart data={pieData} />
-              ) : (
-                <Text style={{ fontSize: 8, color: C.gray400 }}>No NAV data available.</Text>
-              )}
+            {/* ── NAV Exposure by Type + by State (side by side) ── */}
+            <View style={[s.section, { flexDirection: "row", gap: 24 }]}>
+              <View style={{ flex: 1 }}>
+                <SectionTitle>NAV Exposure by Type</SectionTitle>
+                {pieData.length > 0 ? (
+                  <DonutChart data={pieData} />
+                ) : (
+                  <Text style={{ fontSize: 8, color: C.gray400 }}>No NAV data available.</Text>
+                )}
+              </View>
+              <View style={{ flex: 1 }}>
+                <SectionTitle>NAV Exposure by State</SectionTitle>
+                {statePieData.length > 0 ? (
+                  <DonutChart data={statePieData} />
+                ) : (
+                  <Text style={{ fontSize: 8, color: C.gray400 }}>No NAV data available.</Text>
+                )}
+              </View>
             </View>
 
           </View>

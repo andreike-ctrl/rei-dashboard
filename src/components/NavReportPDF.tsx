@@ -520,16 +520,20 @@ export function NavReportPDF({ client, investors: _investors, period, snapshot, 
               <SectionTitle>Invested Properties</SectionTitle>
               <View style={s.tableHead}>
                 <Text style={[s.thText, { flex: 3 }]}>Property</Text>
-                <Text style={[s.thText, { flex: 2, textAlign: "right" }]}>Type</Text>
-                <Text style={[s.thText, { flex: 2, textAlign: "right" }]}>Acquisition Date</Text>
-                <Text style={[s.thText, { flex: 2, textAlign: "right" }]}>Original Invested</Text>
+                <Text style={[s.thText, { flex: 1.5, textAlign: "right" }]}>Type</Text>
+                <Text style={[s.thText, { flex: 2.5, textAlign: "right" }]}>Location</Text>
+                <Text style={[s.thText, { flex: 1.5, textAlign: "right" }]}>Acquisition Date</Text>
+                <Text style={[s.thText, { flex: 1.5, textAlign: "right" }]}>Original Invested</Text>
               </View>
               {holdings.map((row) => (
                 <View key={row.property.property_id} style={s.tableRow}>
                   <Text style={[s.tdText, { flex: 3 }]}>{row.property.name}</Text>
-                  <Text style={[s.tdText, { flex: 2, textAlign: "right" }]}>{row.property.asset_class || "—"}</Text>
-                  <Text style={[s.tdText, { flex: 2, textAlign: "right" }]}>{fmtDateShort(row.property.investment_date)}</Text>
-                  <Text style={[s.tdText, { flex: 2, textAlign: "right" }]}>{fmtCurrency(row.capital)}</Text>
+                  <Text style={[s.tdText, { flex: 1.5, textAlign: "right" }]}>{row.property.asset_class || "—"}</Text>
+                  <Text style={[s.tdText, { flex: 2.5, textAlign: "right" }]}>
+                    {row.property.msa || "—"}{row.property.state ? `, ${row.property.state}` : ""}
+                  </Text>
+                  <Text style={[s.tdText, { flex: 1.5, textAlign: "right" }]}>{fmtDateShort(row.property.investment_date)}</Text>
+                  <Text style={[s.tdText, { flex: 1.5, textAlign: "right" }]}>{fmtCurrency(row.capital)}</Text>
                 </View>
               ))}
             </View>

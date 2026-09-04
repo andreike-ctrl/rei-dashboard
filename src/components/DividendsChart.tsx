@@ -28,7 +28,7 @@ interface ChartDataPoint {
 }
 
 const DISTRIBUTION_COLOR = "#1e40af";
-const REFI_COLOR = "#7c3aed";
+const REFI_COLOR = "#d97706";
 const RETURN_OF_CAPITAL_COLOR = "#0d9488";
 
 function formatHalf(dateStr: string): { label: string; sortKey: string } {

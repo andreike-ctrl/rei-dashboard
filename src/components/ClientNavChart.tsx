@@ -125,6 +125,19 @@ export function ClientNavChart({
     return points.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
   }, [transactions, valuations]);
 
+  const latestValuationDate = useMemo(() => {
+    if (valuations.length === 0) return null;
+    return valuations.reduce((max, v) => (v.date > max ? v.date : max), valuations[0].date);
+  }, [valuations]);
+
+  const latestValuationLabel = latestValuationDate
+    ? new Date(latestValuationDate + "T00:00:00").toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : null;
+
   if (data.length === 0) {
     return (
       <Card>
@@ -143,7 +156,12 @@ export function ClientNavChart({
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>NAV Over Time</CardTitle>
+        <div>
+          <CardTitle>NAV Over Time</CardTitle>
+          {latestValuationLabel && (
+            <p className="mt-0.5 text-xs text-muted-foreground">As of {latestValuationLabel}</p>
+          )}
+        </div>
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: "#1e40af" }} />

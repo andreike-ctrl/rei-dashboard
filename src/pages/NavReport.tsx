@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { NavReportPDF } from "@/components/NavReportPDF";
 import { Spinner } from "@/components/ui/Spinner";
 import { isDistribution } from "@/lib/transactionTypes";
-import type { Client, Investor, Transaction, Valuation, Property } from "@/types/database";
+import type { Client, Investor, Transaction, Valuation, Property, PropertyLocation } from "@/types/database";
 import type { NavSnapshot } from "@/components/NavReportPDF";
 
 function generatePeriods(): string[] {
@@ -31,12 +31,14 @@ export function NavReport() {
   const [clientsLoading, setClientsLoading] = useState(true);
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
   const [period, setPeriod] = useState<string>(PERIODS[2] ?? PERIODS[0]);
+  const [includePortfolioPage, setIncludePortfolioPage] = useState(false);
 
   const [client, setClient] = useState<Client | null>(null);
   const [investors, setInvestors] = useState<Investor[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [valuations, setValuations] = useState<Valuation[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
+  const [locations, setLocations] = useState<PropertyLocation[]>([]);
   const [dataLoading, setDataLoading] = useState(false);
 
   // NAV overrides: property_id -> user-entered NAV string (empty = use base)
@@ -51,7 +53,7 @@ export function NavReport() {
 
   useEffect(() => {
     if (!selectedClientId) {
-      setClient(null); setInvestors([]); setTransactions([]); setValuations([]); setProperties([]);
+      setClient(null); setInvestors([]); setTransactions([]); setValuations([]); setProperties([]); setLocations([]);
       return;
     }
     setDataLoading(true);
@@ -60,23 +62,26 @@ export function NavReport() {
       const { data: invData } = await supabase.from("investors").select("*").eq("client_id", selectedClientId);
       const typedInvestors = (invData ?? []) as Investor[];
       const investorIds = typedInvestors.map((i) => i.investor_id);
-      let typedTxns: Transaction[] = [], typedProps: Property[] = [], typedVals: Valuation[] = [];
+      let typedTxns: Transaction[] = [], typedProps: Property[] = [], typedVals: Valuation[] = [], typedLocs: PropertyLocation[] = [];
       if (investorIds.length > 0) {
         const { data: txnData } = await supabase.from("transactions").select("*").in("investor_id", investorIds).order("date", { ascending: true });
         typedTxns = (txnData ?? []) as Transaction[];
         const propIds = [...new Set(typedTxns.map((t) => t.property_id))];
         if (propIds.length > 0) {
-          const [{ data: propData }, { data: valData }] = await Promise.all([
+          const [{ data: propData }, { data: valData }, { data: locData }] = await Promise.all([
             supabase.from("properties").select("*").in("property_id", propIds),
             supabase.from("valuations").select("*").in("property_id", propIds).order("date", { ascending: false }),
+            supabase.from("property_locations").select("*").in("property_id", propIds),
           ]);
           typedProps = (propData ?? []) as Property[];
           typedVals = (valData ?? []) as Valuation[];
+          typedLocs = (locData ?? []) as PropertyLocation[];
         }
       }
       setClient((cliData as Client) ?? null);
       setInvestors(typedInvestors);
       setTransactions(typedTxns);
+      setLocations(typedLocs);
       setProperties(typedProps);
       setValuations(typedVals);
       setNavOverrides(new Map()); // reset overrides on client/period change
@@ -209,7 +214,7 @@ export function NavReport() {
               <div className="flex h-9 w-full items-center justify-center rounded-md bg-foreground/10 opacity-60"><Spinner /></div>
             ) : pdfReady && client && snapshot ? (
               <PDFDownloadLink
-                document={<NavReportPDF client={client} investors={investors} period={period} snapshot={snapshot} />}
+                document={<NavReportPDF client={client} investors={investors} period={period} snapshot={snapshot} locations={locations} includePortfolioPage={includePortfolioPage} />}
                 fileName={fileName}
               >
                 {({ loading: pdfLoading }) => (
@@ -227,6 +232,16 @@ export function NavReport() {
             )}
           </div>
         </div>
+
+        <label className="mt-4 flex items-center gap-2 text-sm text-foreground">
+          <input
+            type="checkbox"
+            checked={includePortfolioPage}
+            onChange={(e) => setIncludePortfolioPage(e.target.checked)}
+            className="h-4 w-4 rounded border-border text-blue-700 focus:ring-2 focus:ring-ring"
+          />
+          Include Portfolio Overview page (invested properties, map, NAV exposure by type)
+        </label>
       </div>
 
       {/* ── NAV Adjustments table ── */}
@@ -303,7 +318,7 @@ export function NavReport() {
           </div>
         ) : pdfReady && client && snapshot ? (
           <PDFViewer width="100%" height={700} showToolbar={false} style={{ border: "none" }}>
-            <NavReportPDF client={client} investors={investors} period={period} snapshot={snapshot} />
+            <NavReportPDF client={client} investors={investors} period={period} snapshot={snapshot} locations={locations} includePortfolioPage={includePortfolioPage} />
           </PDFViewer>
         ) : null}
       </div>

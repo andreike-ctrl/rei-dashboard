@@ -157,7 +157,7 @@ export function Report() {
       <div className="border border-border bg-background p-6">
         <h2 className="text-base font-semibold text-foreground mb-4">Report Builder</h2>
         <p className="mb-4 text-xs text-muted-foreground">
-          <span className="font-medium text-foreground">Note:</span> The reporting period does not filter or affect the distributions or financial figures in the report. It only adjusts the period text printed in the PDF.
+          <span className="font-medium text-foreground">Note:</span> The reporting period does not filter or affect the distributions or financial figures in the report. It adjusts the period text printed in the PDF and trims the Occupancy and Average Rent charts to data as of the period end.
         </p>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

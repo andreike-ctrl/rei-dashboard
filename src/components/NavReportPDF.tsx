@@ -265,8 +265,11 @@ function classColor(assetClass: string, index: number): string {
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string;
 
 // Fixed on the continental U.S. so the map always shows the whole country,
-// regardless of where the invested properties happen to fall.
-const US_CENTER = { lat: 39.5, lon: -98.35 };
+// regardless of where the invested properties happen to fall. Centered a bit
+// east of the country's true geographic center — Newfoundland/the Atlantic
+// maritimes stick out further east than Florida does south, so centering on
+// -98.35 (the geographic center) left the landmass hugging the right edge.
+const US_CENTER = { lat: 39.5, lon: -90 };
 const US_ZOOM = 2.5;
 
 // Pins are a plain neutral color (not asset-class-coded) — this map is just

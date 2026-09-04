@@ -263,24 +263,21 @@ function classColor(assetClass: string, index: number): string {
 }
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string;
-const MAP_ZOOM = 3;
+
+// Fixed on the continental U.S. so the map always shows the whole country,
+// regardless of where the invested properties happen to fall.
+const US_CENTER = { lat: 39.5, lon: -98.35 };
+const US_ZOOM = 2;
 
 function staticMapUrl(locs: { lat: number; lon: number; color: string }[]): string {
   const pins = locs.map((l) => `pin-s+${l.color.replace("#", "")}(${l.lon},${l.lat})`).join(",");
-  const lats = locs.map((l) => l.lat);
-  const lons = locs.map((l) => l.lon);
-  const centerLat = (Math.min(...lats) + Math.max(...lats)) / 2;
-  const centerLon = (Math.min(...lons) + Math.max(...lons)) / 2;
-  const span = Math.max(Math.max(...lats) - Math.min(...lats), Math.max(...lons) - Math.min(...lons));
-  const position = span > 20 ? "auto" : `${centerLon},${centerLat},${MAP_ZOOM},0`;
-  const extra = span > 20 ? "&padding=40" : "";
-  return `https://api.mapbox.com/styles/v1/mapbox/light-v11/static/${pins}/${position}/500x280@2x?access_token=${MAPBOX_TOKEN}${extra}`;
+  return `https://api.mapbox.com/styles/v1/mapbox/light-v11/static/${pins}/${US_CENTER.lon},${US_CENTER.lat},${US_ZOOM},0/500x280@2x?access_token=${MAPBOX_TOKEN}`;
 }
 
 // Donut chart built from raw SVG arcs (react-pdf has no charting primitives of its own).
 function DonutChart({ data }: { data: { name: string; value: number; color: string }[] }) {
   const total = data.reduce((sum, d) => sum + d.value, 0);
-  const cx = 80, cy = 80, outerR = 74, innerR = 44;
+  const cx = 55, cy = 55, outerR = 50, innerR = 30;
 
   const slices = data.map((d, i) => {
     const before = data.slice(0, i).reduce((sum, x) => sum + x.value, 0);
@@ -302,23 +299,23 @@ function DonutChart({ data }: { data: { name: string; value: number; color: stri
   });
 
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 28 }}>
-      <Svg width={160} height={160} viewBox="0 0 160 160">
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 20 }}>
+      <Svg width={110} height={110} viewBox="0 0 110 110">
         {slices.map((slice) => (
           <Path key={slice.name} d={slice.path} fill={slice.color} fillRule="evenodd" />
         ))}
       </Svg>
-      <View style={{ width: 280, gap: 8 }}>
+      <View style={{ gap: 8 }}>
         {data.map((d) => {
           const pct = total > 0 ? (d.value / total) * 100 : 0;
           return (
             <View key={d.name} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
               <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: d.color }} />
-              <Text style={{ flex: 1, fontSize: 8.5, color: C.gray800 }}>{d.name}</Text>
-              <Text style={{ fontSize: 8.5, fontFamily: "Helvetica-Bold", color: C.gray800, width: 36, textAlign: "right" }}>
+              <Text style={{ fontSize: 8.5, color: C.gray800, width: 80 }}>{d.name}</Text>
+              <Text style={{ fontSize: 8.5, fontFamily: "Helvetica-Bold", color: C.gray800, width: 32, textAlign: "right" }}>
                 {pct.toFixed(0)}%
               </Text>
-              <Text style={{ fontSize: 8.5, color: C.gray600, width: 68, textAlign: "right" }}>
+              <Text style={{ fontSize: 8.5, color: C.gray600, width: 62, textAlign: "right" }}>
                 {fmtCurrency(d.value)}
               </Text>
             </View>

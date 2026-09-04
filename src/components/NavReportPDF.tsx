@@ -267,7 +267,7 @@ const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string;
 // Fixed on the continental U.S. so the map always shows the whole country,
 // regardless of where the invested properties happen to fall.
 const US_CENTER = { lat: 39.5, lon: -98.35 };
-const US_ZOOM = 2;
+const US_ZOOM = 2.5;
 
 // Pins are a plain neutral color (not asset-class-coded) — this map is just
 // for "where", the donut charts below already cover the type/state breakdown.
@@ -531,7 +531,7 @@ export function NavReportPDF({ client, investors: _investors, period, snapshot, 
                 <Text style={[s.thText, { flex: 1.3, textAlign: "right" }]}>Type</Text>
                 <Text style={[s.thText, { flex: 2.5, textAlign: "right" }]}>Location</Text>
                 <Text style={[s.thText, { flex: 1.7, textAlign: "right" }]}>Acquisition Date</Text>
-                <Text style={[s.thText, { flex: 2, fontSize: 6.5, textAlign: "right" }]}>Original Invested</Text>
+                <Text style={[s.thText, { flex: 2, fontSize: 6.5, textAlign: "right" }]}>Capital Invested</Text>
               </View>
               {holdings.map((row) => (
                 <View key={row.property.property_id} style={s.tableRow}>

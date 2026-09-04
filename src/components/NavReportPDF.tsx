@@ -5,8 +5,10 @@ import {
   View,
   Image,
   StyleSheet,
+  Svg,
+  Path,
 } from "@react-pdf/renderer";
-import type { Client, Investor, Property } from "@/types/database";
+import type { Client, Investor, Property, PropertyLocation } from "@/types/database";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -235,7 +237,98 @@ const s = StyleSheet.create({
     paddingTop: 8,
   },
   footerText: { fontSize: 7, color: C.gray400 },
+  twoCol: {
+    flexDirection: "row",
+    gap: 16,
+  },
+  colLeft: { flex: 1 },
+  colRight: { flex: 1 },
 });
+
+function SectionTitle({ children }: { children: string }) {
+  return <Text style={s.sectionTitle}>{children}</Text>;
+}
+
+// ─── Portfolio Overview page helpers ───────────────────────────────────────────
+
+const ASSET_CLASS_COLORS: Record<string, string> = {
+  Multifamily: "#1e40af",
+  Student: "#16a34a",
+  Office: "#94a3b8",
+};
+const DEFAULT_CLASS_COLOR = "#64748b";
+const PIE_COLORS = ["#1e40af", "#0891b2", "#059669", "#d97706", "#dc2626", "#7c3aed", "#db2777", "#475569"];
+
+function classColor(assetClass: string, index: number): string {
+  return ASSET_CLASS_COLORS[assetClass] ?? PIE_COLORS[index % PIE_COLORS.length] ?? DEFAULT_CLASS_COLOR;
+}
+
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string;
+const MAP_ZOOM = 3;
+
+function staticMapUrl(locs: { lat: number; lon: number; color: string }[]): string {
+  const pins = locs.map((l) => `pin-s+${l.color.replace("#", "")}(${l.lon},${l.lat})`).join(",");
+  const lats = locs.map((l) => l.lat);
+  const lons = locs.map((l) => l.lon);
+  const centerLat = (Math.min(...lats) + Math.max(...lats)) / 2;
+  const centerLon = (Math.min(...lons) + Math.max(...lons)) / 2;
+  const span = Math.max(Math.max(...lats) - Math.min(...lats), Math.max(...lons) - Math.min(...lons));
+  const position = span > 20 ? "auto" : `${centerLon},${centerLat},${MAP_ZOOM},0`;
+  const extra = span > 20 ? "&padding=40" : "";
+  return `https://api.mapbox.com/styles/v1/mapbox/light-v11/static/${pins}/${position}/500x280@2x?access_token=${MAPBOX_TOKEN}${extra}`;
+}
+
+// Donut chart built from raw SVG arcs (react-pdf has no charting primitives of its own).
+function DonutChart({ data }: { data: { name: string; value: number; color: string }[] }) {
+  const total = data.reduce((sum, d) => sum + d.value, 0);
+  const cx = 65, cy = 65, outerR = 60, innerR = 36;
+
+  const slices = data.map((d, i) => {
+    const before = data.slice(0, i).reduce((sum, x) => sum + x.value, 0);
+    const after = before + d.value;
+    const startAngle = (before / total) * 2 * Math.PI - Math.PI / 2;
+    const endAngle = (after / total) * 2 * Math.PI - Math.PI / 2;
+    const largeArc = endAngle - startAngle > Math.PI ? 1 : 0;
+
+    const x1o = cx + outerR * Math.cos(startAngle), y1o = cy + outerR * Math.sin(startAngle);
+    const x2o = cx + outerR * Math.cos(endAngle), y2o = cy + outerR * Math.sin(endAngle);
+    const x2i = cx + innerR * Math.cos(endAngle), y2i = cy + innerR * Math.sin(endAngle);
+    const x1i = cx + innerR * Math.cos(startAngle), y1i = cy + innerR * Math.sin(startAngle);
+
+    const path = data.length === 1
+      ? `M ${cx - outerR} ${cy} A ${outerR} ${outerR} 0 1 1 ${cx + outerR} ${cy} A ${outerR} ${outerR} 0 1 1 ${cx - outerR} ${cy} M ${cx - innerR} ${cy} A ${innerR} ${innerR} 0 1 0 ${cx + innerR} ${cy} A ${innerR} ${innerR} 0 1 0 ${cx - innerR} ${cy} Z`
+      : `M ${x1o} ${y1o} A ${outerR} ${outerR} 0 ${largeArc} 1 ${x2o} ${y2o} L ${x2i} ${y2i} A ${innerR} ${innerR} 0 ${largeArc} 0 ${x1i} ${y1i} Z`;
+
+    return { ...d, path };
+  });
+
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 20 }}>
+      <Svg width={130} height={130} viewBox="0 0 130 130">
+        {slices.map((slice) => (
+          <Path key={slice.name} d={slice.path} fill={slice.color} fillRule="evenodd" />
+        ))}
+      </Svg>
+      <View style={{ flex: 1, gap: 6 }}>
+        {data.map((d) => {
+          const pct = total > 0 ? (d.value / total) * 100 : 0;
+          return (
+            <View key={d.name} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+              <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: d.color }} />
+              <Text style={{ flex: 1, fontSize: 8, color: C.gray800 }}>{d.name}</Text>
+              <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", color: C.gray800, width: 32, textAlign: "right" }}>
+                {pct.toFixed(0)}%
+              </Text>
+              <Text style={{ fontSize: 8, color: C.gray600, width: 62, textAlign: "right" }}>
+                {fmtCurrency(d.value)}
+              </Text>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -264,12 +357,36 @@ interface Props {
   investors: Investor[];
   period: string;
   snapshot: NavSnapshot;
+  locations?: PropertyLocation[];
+  includePortfolioPage?: boolean;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export function NavReportPDF({ client, investors: _investors, period, snapshot }: Props) {
+export function NavReportPDF({ client, investors: _investors, period, snapshot, locations = [], includePortfolioPage = false }: Props) {
   const logoSrc = `${window.location.origin}/vo2-logo.png`;
+
+  // ── Portfolio Overview page data ──
+  const holdings = snapshot.rows.filter((r) => (r.nav ?? 0) > 0);
+  const holdingPropertyIds = new Set(holdings.map((r) => r.property.property_id));
+
+  const navByClass = new Map<string, number>();
+  for (const row of holdings) {
+    const assetClass = row.property.asset_class || "Other";
+    navByClass.set(assetClass, (navByClass.get(assetClass) ?? 0) + (row.nav ?? 0));
+  }
+  const pieData = Array.from(navByClass.entries())
+    .map(([name, value], i) => ({ name, value, color: classColor(name, i) }))
+    .sort((a, b) => b.value - a.value);
+
+  const mapLocations = locations
+    .filter((l) => l.type === "building" && holdingPropertyIds.has(l.property_id))
+    .map((l) => {
+      const prop = holdings.find((r) => r.property.property_id === l.property_id)?.property;
+      const assetClass = prop?.asset_class || "Other";
+      const idx = pieData.findIndex((d) => d.name === assetClass);
+      return { lat: l.lat, lon: l.lon, color: classColor(assetClass, idx >= 0 ? idx : 0) };
+    });
 
   return (
     <Document title={`${client.name} — NAV Report ${period}`} author="VO2 Alternatives">
@@ -329,7 +446,10 @@ export function NavReportPDF({ client, investors: _investors, period, snapshot }
                 <Text style={s.thText}>Capital</Text>
                 <Text style={s.thText}>Invested (LTD)</Text>
               </View>
-              <Text style={[s.thText, { flex: 2, textAlign: "right" }]}>Current NAV</Text>
+              <View style={{ flex: 2, alignItems: "flex-end" }}>
+                <Text style={s.thText}>Current</Text>
+                <Text style={s.thText}>Est. NAV</Text>
+              </View>
               <Text style={[s.thText, { flex: 2, textAlign: "right" }]}>Distributions (LTD)</Text>
               <View style={{ flex: 2, alignItems: "flex-end" }}>
                 <Text style={s.thText}>Other</Text>
@@ -372,11 +492,80 @@ export function NavReportPDF({ client, investors: _investors, period, snapshot }
 
         {/* ── Footer ── */}
         <View style={s.footer} fixed>
-          <Text style={s.footerText}>VO2 Alternatives — Confidential</Text>
+          <Text style={s.footerText}>VO2 Alternatives | Confidential</Text>
           <Text style={s.footerText} render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} />
         </View>
 
       </Page>
+
+      {/* ── Portfolio Overview page (optional) ── */}
+      {includePortfolioPage && (
+        <Page size="LETTER" style={s.page}>
+
+          {/* ── Header ── */}
+          <View style={s.header}>
+            <View style={s.headerLeft}>
+              <Image src={logoSrc} style={s.headerLogo} />
+              <Text style={s.headerTitle}>{client.name}</Text>
+            </View>
+            <View style={s.headerRight}>
+              <Text style={s.headerPeriod}>Portfolio Overview</Text>
+              <Text style={s.headerDate}>{period}</Text>
+            </View>
+          </View>
+
+          <View style={s.body}>
+
+            {/* ── Invested Properties table ── */}
+            <View style={s.section}>
+              <SectionTitle>Invested Properties</SectionTitle>
+              <View style={s.tableHead}>
+                <Text style={[s.thText, { flex: 3 }]}>Property</Text>
+                <Text style={[s.thText, { flex: 2, textAlign: "right" }]}>Type</Text>
+              </View>
+              {holdings.map((row) => (
+                <View key={row.property.property_id} style={s.tableRow}>
+                  <Text style={[s.tdText, { flex: 3 }]}>{row.property.name}</Text>
+                  <Text style={[s.tdText, { flex: 2, textAlign: "right" }]}>{row.property.asset_class || "—"}</Text>
+                </View>
+              ))}
+            </View>
+
+            {/* ── Map + NAV Exposure (side by side) ── */}
+            <View style={[s.section, s.twoCol]}>
+              <View style={s.colLeft}>
+                <SectionTitle>Locations</SectionTitle>
+                {mapLocations.length > 0 ? (
+                  <View style={{ width: "100%", height: 160, borderRadius: 6, overflow: "hidden" }}>
+                    <Image
+                      src={staticMapUrl(mapLocations)}
+                      style={{ width: "100%", height: 192, objectFit: "cover" }}
+                    />
+                  </View>
+                ) : (
+                  <Text style={{ fontSize: 8, color: C.gray400 }}>No location data available.</Text>
+                )}
+              </View>
+              <View style={s.colRight}>
+                <SectionTitle>NAV Exposure by Type</SectionTitle>
+                {pieData.length > 0 ? (
+                  <DonutChart data={pieData} />
+                ) : (
+                  <Text style={{ fontSize: 8, color: C.gray400 }}>No NAV data available.</Text>
+                )}
+              </View>
+            </View>
+
+          </View>
+
+          {/* ── Footer ── */}
+          <View style={s.footer} fixed>
+            <Text style={s.footerText}>VO2 Alternatives | Confidential</Text>
+            <Text style={s.footerText} render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} />
+          </View>
+
+        </Page>
+      )}
     </Document>
   );
 }

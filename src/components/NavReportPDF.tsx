@@ -269,9 +269,16 @@ const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string;
 const US_CENTER = { lat: 39.5, lon: -98.35 };
 const US_ZOOM = 2;
 
-function staticMapUrl(locs: { lat: number; lon: number; color: string }[]): string {
-  const pins = locs.map((l) => `pin-s+${l.color.replace("#", "")}(${l.lon},${l.lat})`).join(",");
-  return `https://api.mapbox.com/styles/v1/mapbox/light-v11/static/${pins}/${US_CENTER.lon},${US_CENTER.lat},${US_ZOOM},0/500x280@2x?access_token=${MAPBOX_TOKEN}`;
+// Pins are a plain neutral color (not asset-class-coded) — this map is just
+// for "where", the donut charts below already cover the type/state breakdown.
+const MAP_PIN_COLOR = "64748b";
+
+function staticMapUrl(locs: { lat: number; lon: number }[]): string {
+  const pins = locs.map((l) => `pin-s+${MAP_PIN_COLOR}(${l.lon},${l.lat})`).join(",");
+  // Requesting a larger canvas than the map is displayed at (same aspect ratio,
+  // same center/zoom) shrinks the pins' apparent size relative to the map,
+  // since Mapbox's "pin-s" marker has a fixed pixel footprint.
+  return `https://api.mapbox.com/styles/v1/mapbox/light-v11/static/${pins}/${US_CENTER.lon},${US_CENTER.lat},${US_ZOOM},0/750x420@2x?access_token=${MAPBOX_TOKEN}`;
 }
 
 // Donut chart built from raw SVG arcs (react-pdf has no charting primitives of its own).
@@ -386,12 +393,7 @@ export function NavReportPDF({ client, investors: _investors, period, snapshot, 
 
   const mapLocations = locations
     .filter((l) => l.type === "building" && holdingPropertyIds.has(l.property_id))
-    .map((l) => {
-      const prop = holdings.find((r) => r.property.property_id === l.property_id)?.property;
-      const assetClass = prop?.asset_class || "Other";
-      const idx = pieData.findIndex((d) => d.name === assetClass);
-      return { lat: l.lat, lon: l.lon, color: classColor(assetClass, idx >= 0 ? idx : 0) };
-    });
+    .map((l) => ({ lat: l.lat, lon: l.lon }));
 
   return (
     <Document title={`${client.name} — NAV Report ${period}`} author="VO2 Alternatives">
@@ -525,28 +527,28 @@ export function NavReportPDF({ client, investors: _investors, period, snapshot, 
             <View style={s.section}>
               <SectionTitle>Invested Properties</SectionTitle>
               <View style={s.tableHead}>
-                <Text style={[s.thText, { flex: 3 }]}>Property</Text>
-                <Text style={[s.thText, { flex: 1.5, textAlign: "right" }]}>Type</Text>
+                <Text style={[s.thText, { flex: 2.5 }]}>Property</Text>
+                <Text style={[s.thText, { flex: 1.3, textAlign: "right" }]}>Type</Text>
                 <Text style={[s.thText, { flex: 2.5, textAlign: "right" }]}>Location</Text>
-                <Text style={[s.thText, { flex: 1.5, textAlign: "right" }]}>Acquisition Date</Text>
-                <Text style={[s.thText, { flex: 1.5, textAlign: "right" }]}>Original Invested</Text>
+                <Text style={[s.thText, { flex: 1.7, textAlign: "right" }]}>Acquisition Date</Text>
+                <Text style={[s.thText, { flex: 2, fontSize: 6.5, textAlign: "right" }]}>Original Invested</Text>
               </View>
               {holdings.map((row) => (
                 <View key={row.property.property_id} style={s.tableRow}>
-                  <Text style={[s.tdText, { flex: 3 }]}>{row.property.name}</Text>
-                  <Text style={[s.tdText, { flex: 1.5, textAlign: "right" }]}>{row.property.asset_class || "—"}</Text>
+                  <Text style={[s.tdText, { flex: 2.5 }]}>{row.property.name}</Text>
+                  <Text style={[s.tdText, { flex: 1.3, textAlign: "right" }]}>{row.property.asset_class || "—"}</Text>
                   <Text style={[s.tdText, { flex: 2.5, textAlign: "right" }]}>
                     {row.property.msa || "—"}{row.property.state ? `, ${row.property.state}` : ""}
                   </Text>
-                  <Text style={[s.tdText, { flex: 1.5, textAlign: "right" }]}>{fmtDateShort(row.property.investment_date)}</Text>
-                  <Text style={[s.tdText, { flex: 1.5, textAlign: "right" }]}>{fmtCurrency(row.capital)}</Text>
+                  <Text style={[s.tdText, { flex: 1.7, textAlign: "right" }]}>{fmtDateShort(row.property.investment_date)}</Text>
+                  <Text style={[s.tdText, { flex: 2, textAlign: "right" }]}>{fmtCurrency(row.capital)}</Text>
                 </View>
               ))}
             </View>
 
-            {/* ── Locations map ── */}
+            {/* ── Properties map ── */}
             <View style={s.section}>
-              <SectionTitle>Locations</SectionTitle>
+              <SectionTitle>Properties Map</SectionTitle>
               {mapLocations.length > 0 ? (
                 <View style={{ width: "100%", height: 190, borderRadius: 6, overflow: "hidden" }}>
                   <Image

@@ -44,6 +44,15 @@ function fmtHalf(d: string | null | undefined) {
   return `${half} ${dt.getFullYear()}`;
 }
 
+// Last calendar day of the given "H1 YYYY" / "H2 YYYY" period, e.g. "H1 2024" → 2024-06-30.
+function periodEndDate(period: string | undefined): string | null {
+  if (!period) return null;
+  const match = period.match(/^(H1|H2)\s+(\d{4})$/);
+  if (!match) return null;
+  const [, half, year] = match;
+  return half === "H1" ? `${year}-06-30` : `${year}-12-31`;
+}
+
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
@@ -446,11 +455,15 @@ export function PropertyReportPDF({ property, valuations: _valuations, transacti
   const generatedDate = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 
   // ── Chart data ──
+  // Occupancy and Average Rent should not show data past the selected reporting period.
+  const periodEnd = periodEndDate(period);
+
   // For each half-year period keep only the latest data point (highest date).
   function latestPerHalf(type: string) {
     const byHalf = new Map<string, Metric>();
     metrics
       .filter((m) => m.metric_type === type)
+      .filter((m) => !periodEnd || m.as_of_date <= periodEnd)
       .sort((a, b) => a.as_of_date.localeCompare(b.as_of_date))
       .forEach((m) => byHalf.set(fmtHalf(m.as_of_date), m));
     function halfSortKey(label: string) {

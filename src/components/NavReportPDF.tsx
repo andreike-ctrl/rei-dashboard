@@ -22,6 +22,11 @@ function fmtDate(d: string | null | undefined) {
   return new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 }
 
+function fmtDateShort(d: string | null | undefined) {
+  if (!d) return "—";
+  return new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", year: "numeric" });
+}
+
 function fmtMultiple(v: number | null) {
   return v != null ? v.toFixed(2) + "x" : "—";
 }
@@ -237,12 +242,6 @@ const s = StyleSheet.create({
     paddingTop: 8,
   },
   footerText: { fontSize: 7, color: C.gray400 },
-  twoCol: {
-    flexDirection: "row",
-    gap: 16,
-  },
-  colLeft: { flex: 1 },
-  colRight: { flex: 1 },
 });
 
 function SectionTitle({ children }: { children: string }) {
@@ -281,7 +280,7 @@ function staticMapUrl(locs: { lat: number; lon: number; color: string }[]): stri
 // Donut chart built from raw SVG arcs (react-pdf has no charting primitives of its own).
 function DonutChart({ data }: { data: { name: string; value: number; color: string }[] }) {
   const total = data.reduce((sum, d) => sum + d.value, 0);
-  const cx = 65, cy = 65, outerR = 60, innerR = 36;
+  const cx = 80, cy = 80, outerR = 74, innerR = 44;
 
   const slices = data.map((d, i) => {
     const before = data.slice(0, i).reduce((sum, x) => sum + x.value, 0);
@@ -303,23 +302,23 @@ function DonutChart({ data }: { data: { name: string; value: number; color: stri
   });
 
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 20 }}>
-      <Svg width={130} height={130} viewBox="0 0 130 130">
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 28 }}>
+      <Svg width={160} height={160} viewBox="0 0 160 160">
         {slices.map((slice) => (
           <Path key={slice.name} d={slice.path} fill={slice.color} fillRule="evenodd" />
         ))}
       </Svg>
-      <View style={{ flex: 1, gap: 6 }}>
+      <View style={{ width: 280, gap: 8 }}>
         {data.map((d) => {
           const pct = total > 0 ? (d.value / total) * 100 : 0;
           return (
             <View key={d.name} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
               <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: d.color }} />
-              <Text style={{ flex: 1, fontSize: 8, color: C.gray800 }}>{d.name}</Text>
-              <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", color: C.gray800, width: 32, textAlign: "right" }}>
+              <Text style={{ flex: 1, fontSize: 8.5, color: C.gray800 }}>{d.name}</Text>
+              <Text style={{ fontSize: 8.5, fontFamily: "Helvetica-Bold", color: C.gray800, width: 36, textAlign: "right" }}>
                 {pct.toFixed(0)}%
               </Text>
-              <Text style={{ fontSize: 8, color: C.gray600, width: 62, textAlign: "right" }}>
+              <Text style={{ fontSize: 8.5, color: C.gray600, width: 68, textAlign: "right" }}>
                 {fmtCurrency(d.value)}
               </Text>
             </View>
@@ -521,39 +520,47 @@ export function NavReportPDF({ client, investors: _investors, period, snapshot, 
               <SectionTitle>Invested Properties</SectionTitle>
               <View style={s.tableHead}>
                 <Text style={[s.thText, { flex: 3 }]}>Property</Text>
-                <Text style={[s.thText, { flex: 2, textAlign: "right" }]}>Type</Text>
+                <Text style={[s.thText, { flex: 1.5, textAlign: "right" }]}>Type</Text>
+                <Text style={[s.thText, { flex: 2.5, textAlign: "right" }]}>Location</Text>
+                <Text style={[s.thText, { flex: 1.5, textAlign: "right" }]}>Acquisition Date</Text>
+                <Text style={[s.thText, { flex: 1.5, textAlign: "right" }]}>Original Invested</Text>
               </View>
               {holdings.map((row) => (
                 <View key={row.property.property_id} style={s.tableRow}>
                   <Text style={[s.tdText, { flex: 3 }]}>{row.property.name}</Text>
-                  <Text style={[s.tdText, { flex: 2, textAlign: "right" }]}>{row.property.asset_class || "—"}</Text>
+                  <Text style={[s.tdText, { flex: 1.5, textAlign: "right" }]}>{row.property.asset_class || "—"}</Text>
+                  <Text style={[s.tdText, { flex: 2.5, textAlign: "right" }]}>
+                    {row.property.msa || "—"}{row.property.state ? `, ${row.property.state}` : ""}
+                  </Text>
+                  <Text style={[s.tdText, { flex: 1.5, textAlign: "right" }]}>{fmtDateShort(row.property.investment_date)}</Text>
+                  <Text style={[s.tdText, { flex: 1.5, textAlign: "right" }]}>{fmtCurrency(row.capital)}</Text>
                 </View>
               ))}
             </View>
 
-            {/* ── Map + NAV Exposure (side by side) ── */}
-            <View style={[s.section, s.twoCol]}>
-              <View style={s.colLeft}>
-                <SectionTitle>Locations</SectionTitle>
-                {mapLocations.length > 0 ? (
-                  <View style={{ width: "100%", height: 160, borderRadius: 6, overflow: "hidden" }}>
-                    <Image
-                      src={staticMapUrl(mapLocations)}
-                      style={{ width: "100%", height: 192, objectFit: "cover" }}
-                    />
-                  </View>
-                ) : (
-                  <Text style={{ fontSize: 8, color: C.gray400 }}>No location data available.</Text>
-                )}
-              </View>
-              <View style={s.colRight}>
-                <SectionTitle>NAV Exposure by Type</SectionTitle>
-                {pieData.length > 0 ? (
-                  <DonutChart data={pieData} />
-                ) : (
-                  <Text style={{ fontSize: 8, color: C.gray400 }}>No NAV data available.</Text>
-                )}
-              </View>
+            {/* ── Locations map ── */}
+            <View style={s.section}>
+              <SectionTitle>Locations</SectionTitle>
+              {mapLocations.length > 0 ? (
+                <View style={{ width: "100%", height: 190, borderRadius: 6, overflow: "hidden" }}>
+                  <Image
+                    src={staticMapUrl(mapLocations)}
+                    style={{ width: "100%", height: 222, objectFit: "cover" }}
+                  />
+                </View>
+              ) : (
+                <Text style={{ fontSize: 8, color: C.gray400 }}>No location data available.</Text>
+              )}
+            </View>
+
+            {/* ── NAV Exposure by Type ── */}
+            <View style={s.section}>
+              <SectionTitle>NAV Exposure by Type</SectionTitle>
+              {pieData.length > 0 ? (
+                <DonutChart data={pieData} />
+              ) : (
+                <Text style={{ fontSize: 8, color: C.gray400 }}>No NAV data available.</Text>
+              )}
             </View>
 
           </View>

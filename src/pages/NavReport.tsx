@@ -30,7 +30,11 @@ export function NavReport() {
   const [clients, setClients] = useState<Client[]>([]);
   const [clientsLoading, setClientsLoading] = useState(true);
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
-  const [period, setPeriod] = useState<string>(PERIODS[2] ?? PERIODS[0]);
+  const [snapshotPeriod, setSnapshotPeriod] = useState<string>(PERIODS[2] ?? PERIODS[0]);
+  // Displayed/reported period — usually the same as snapshotPeriod, but can be set earlier
+  // (e.g. label the report "H1 2026" while the snapshot data runs through H2 2026, to
+  // capture dividends paid in H2 that relate to the H1 period).
+  const [reportPeriod, setReportPeriod] = useState<string>(PERIODS[2] ?? PERIODS[0]);
   const [includePortfolioPage, setIncludePortfolioPage] = useState(false);
 
   const [client, setClient] = useState<Client | null>(null);
@@ -90,14 +94,14 @@ export function NavReport() {
     load();
   }, [selectedClientId]);
 
-  // Reset overrides when period changes
-  useEffect(() => { setNavOverrides(new Map()); }, [period]);
+  // Reset overrides when the snapshot period changes
+  useEffect(() => { setNavOverrides(new Map()); }, [snapshotPeriod]);
 
   // Period end date: H1 YYYY → YYYY-06-30, H2 YYYY → YYYY-12-31
   const periodEndDate = useMemo(() => {
-    const [half, year] = period.split(" ");
+    const [half, year] = snapshotPeriod.split(" ");
     return half === "H1" ? `${year}-06-30` : `${year}-12-31`;
-  }, [period]);
+  }, [snapshotPeriod]);
 
   // Base per-property data — transactions and valuations up to period end date
   const baseRows = useMemo(() => {
@@ -141,7 +145,7 @@ export function NavReport() {
           baseNav,
         };
       })
-      .sort((a, b) => a.property.name.localeCompare(b.property.name));
+      .sort((a, b) => (a.property.investment_date || "").localeCompare(b.property.investment_date || ""));
   }, [client, dataLoading, properties, valuations, transactions, investors, periodEndDate]);
 
   // Snapshot using overrides
@@ -171,7 +175,7 @@ export function NavReport() {
 
   const pdfReady = snapshot !== null && client !== null;
   const fileName = client
-    ? `VO2 NAV Report ${period.split(" ").reverse().join(" ")} - ${client.name}.pdf`
+    ? `VO2 NAV Report ${reportPeriod.split(" ").reverse().join(" ")} - ${client.name}.pdf`
     : "VO2 NAV Report.pdf";
 
   return (
@@ -180,9 +184,9 @@ export function NavReport() {
       <div className="border border-border bg-background p-6">
         <h2 className="text-base font-semibold text-foreground mb-4">NAV Report Builder</h2>
         <p className="mb-4 text-xs text-muted-foreground">
-          <span className="font-medium text-foreground">Note:</span> This report is a snapshot as of the selected period end date. Transactions and valuations after that date are excluded. Capital invested and distributions received are life-to-date figures up to the period end.
+          <span className="font-medium text-foreground">Note:</span> The Snapshot Period controls what data is included — transactions and valuations after its period end date are excluded, and capital/distributions are life-to-date figures up to that end date. The Report Period only controls the period text and file name shown in the report; it doesn't affect the numbers. Set them differently when a report should read as an earlier period (e.g. "H1 2026") but the snapshot data should run through a later one (e.g. "H2 2026", to capture dividends paid in H2 relating to H1).
         </p>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Client</label>
             {clientsLoading ? (
@@ -201,8 +205,18 @@ export function NavReport() {
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Snapshot Period</label>
             <select
-              value={period}
-              onChange={(e) => setPeriod(e.target.value)}
+              value={snapshotPeriod}
+              onChange={(e) => setSnapshotPeriod(e.target.value)}
+              className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              {PERIODS.map((p) => <option key={p} value={p}>{p}</option>)}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Report Period</label>
+            <select
+              value={reportPeriod}
+              onChange={(e) => setReportPeriod(e.target.value)}
               className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             >
               {PERIODS.map((p) => <option key={p} value={p}>{p}</option>)}
@@ -214,7 +228,7 @@ export function NavReport() {
               <div className="flex h-9 w-full items-center justify-center rounded-md bg-foreground/10 opacity-60"><Spinner /></div>
             ) : pdfReady && client && snapshot ? (
               <PDFDownloadLink
-                document={<NavReportPDF client={client} investors={investors} period={period} snapshot={snapshot} locations={locations} includePortfolioPage={includePortfolioPage} />}
+                document={<NavReportPDF client={client} investors={investors} period={reportPeriod} snapshot={snapshot} locations={locations} includePortfolioPage={includePortfolioPage} />}
                 fileName={fileName}
               >
                 {({ loading: pdfLoading }) => (
@@ -318,7 +332,7 @@ export function NavReport() {
           </div>
         ) : pdfReady && client && snapshot ? (
           <PDFViewer width="100%" height={700} showToolbar={false} style={{ border: "none" }}>
-            <NavReportPDF client={client} investors={investors} period={period} snapshot={snapshot} locations={locations} includePortfolioPage={includePortfolioPage} />
+            <NavReportPDF client={client} investors={investors} period={reportPeriod} snapshot={snapshot} locations={locations} includePortfolioPage={includePortfolioPage} />
           </PDFViewer>
         ) : null}
       </div>

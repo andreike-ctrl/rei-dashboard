@@ -183,9 +183,6 @@ export function NavReport() {
       {/* ── Controls ── */}
       <div className="border border-border bg-background p-6">
         <h2 className="text-base font-semibold text-foreground mb-4">NAV Report Builder</h2>
-        <p className="mb-4 text-xs text-muted-foreground">
-          <span className="font-medium text-foreground">Note:</span> The Snapshot Period controls what data is included — transactions and valuations after its period end date are excluded, and capital/distributions are life-to-date figures up to that end date. The Report Period only controls the period text and file name shown in the report; it doesn't affect the numbers. Set them differently when a report should read as an earlier period (e.g. "H1 2026") but the snapshot data should run through a later one (e.g. "H2 2026", to capture dividends paid in H2 relating to H1).
-        </p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Client</label>
@@ -203,7 +200,7 @@ export function NavReport() {
             )}
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Snapshot Period</label>
+            <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Snapshot Period [used for the calculations]</label>
             <select
               value={snapshotPeriod}
               onChange={(e) => setSnapshotPeriod(e.target.value)}
@@ -213,7 +210,7 @@ export function NavReport() {
             </select>
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Report Period</label>
+            <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Report Period [only text and file name]</label>
             <select
               value={reportPeriod}
               onChange={(e) => setReportPeriod(e.target.value)}

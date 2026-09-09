@@ -185,7 +185,10 @@ export function NavReport() {
         <h2 className="text-base font-semibold text-foreground mb-4">NAV Report Builder</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Client</label>
+            <label className="flex flex-col text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              <span>Client</span>
+              <span className="text-[10px] normal-case font-normal text-muted-foreground/70">the report recipient</span>
+            </label>
             {clientsLoading ? (
               <div className="h-9 rounded-md border border-border animate-pulse bg-muted/40" />
             ) : (
@@ -200,7 +203,10 @@ export function NavReport() {
             )}
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Snapshot Period [used for the calculations]</label>
+            <label className="flex flex-col text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              <span>Snapshot Period</span>
+              <span className="text-[10px] normal-case font-normal text-muted-foreground/70">used for the calculations</span>
+            </label>
             <select
               value={snapshotPeriod}
               onChange={(e) => setSnapshotPeriod(e.target.value)}
@@ -210,7 +216,10 @@ export function NavReport() {
             </select>
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Report Period [only text and file name]</label>
+            <label className="flex flex-col text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              <span>Report Period</span>
+              <span className="text-[10px] normal-case font-normal text-muted-foreground/70">only text and file name</span>
+            </label>
             <select
               value={reportPeriod}
               onChange={(e) => setReportPeriod(e.target.value)}
@@ -220,7 +229,10 @@ export function NavReport() {
             </select>
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground opacity-0 select-none">&nbsp;</label>
+            <label className="flex flex-col text-xs font-medium uppercase tracking-wide text-muted-foreground opacity-0 select-none">
+              <span>&nbsp;</span>
+              <span className="text-[10px]">&nbsp;</span>
+            </label>
             {dataLoading ? (
               <div className="flex h-9 w-full items-center justify-center rounded-md bg-foreground/10 opacity-60"><Spinner /></div>
             ) : pdfReady && client && snapshot ? (
